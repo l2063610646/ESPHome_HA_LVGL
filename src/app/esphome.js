@@ -6,6 +6,9 @@ import {
   quoteYaml,
 } from "./spec.js";
 
+const UI_FONT_BODY = "montserrat_14";
+const UI_FONT_VALUE = "montserrat_16";
+
 export function renderCombinedYaml(state) {
   const entities = normalizeEntities(state.entities, state.canvasWidth, state.canvasHeight);
   const header = [
@@ -276,6 +279,7 @@ touchscreen:
     update_interval: 50ms
 
 lvgl:
+  default_font: ${UI_FONT_BODY}
   displays:
     - main_display
   touchscreens:
@@ -404,6 +408,7 @@ touchscreen:
     update_interval: 50ms
 
 lvgl:
+  default_font: ${UI_FONT_BODY}
   displays:
     - main_display
   touchscreens:
@@ -553,6 +558,7 @@ function renderSingleSwitchToggleWidget(entity) {
       - label:
           align: LEFT_MID
           x: 16
+          text_font: ${UI_FONT_BODY}
           text: ${quoteYaml(entity.props.title)}
       - switch:
           id: ${getWidgetId(entity, 0)}
@@ -594,6 +600,7 @@ function renderSingleSwitchButtonWidget(entity) {
           align: TOP_LEFT
           x: 16
           y: 12
+          text_font: ${UI_FONT_BODY}
           text: ${quoteYaml(entity.props.title)}
       - button:
           id: ${getWidgetId(entity, 0)}
@@ -616,6 +623,7 @@ function renderSingleSwitchButtonWidget(entity) {
           widgets:
             - label:
                 align: CENTER
+                text_font: ${UI_FONT_BODY}
                 text: "Toggle"
                 text_color: 0x24323A
           on_change:
@@ -671,6 +679,7 @@ function renderThermoHygrometerWidget(entity) {
             - label:
                 id: ${getValueLabelId(entity, 0)}
                 align: BOTTOM_MID
+                text_font: ${UI_FONT_VALUE}
                 text: "${getMetricCaption(0)}: --${getMetricSuffix(0)}"
                 text_color: 0x24323A
       - obj:
@@ -696,6 +705,7 @@ function renderThermoHygrometerWidget(entity) {
             - label:
                 id: ${getValueLabelId(entity, 1)}
                 align: BOTTOM_MID
+                text_font: ${UI_FONT_VALUE}
                 text: "${getMetricCaption(1)}: --${getMetricSuffix(1)}"
                 text_color: 0x24323A`;
 }
@@ -757,6 +767,7 @@ function renderLightWidget(entity) {
                   - label:
                       id: ${getLightStateLabelId(entity)}
                       align: CENTER
+                      text_font: ${UI_FONT_BODY}
                       text: !lambda |-
                         static std::string value;
                         value = id(${getHaTextSensorId(entity, 0)}).state == "on" ? "ON" : "OFF";
