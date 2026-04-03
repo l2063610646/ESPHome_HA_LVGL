@@ -486,6 +486,44 @@ textarea {
   text-align: center;
 }
 
+.light-widget-group {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 80px;
+  height: 90px;
+  transform: translate(-50%, -50%);
+  display: grid;
+  grid-template-rows: 1fr auto;
+  justify-items: center;
+  align-items: center;
+}
+
+.light-widget-icon {
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+}
+
+.light-action-button {
+  width: 80px;
+  height: 30px;
+  padding: 0 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  border: 1px solid #b9c9c2;
+  background: #eef3f0;
+}
+
+.light-action-label {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: #24323a;
+}
+
 .dual-button-label {
   font-size: 13px;
   font-weight: 700;

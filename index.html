@@ -151,6 +151,7 @@
                 <option value="switch">switch</option>
                 <option value="dual_switch">dual_switch</option>
                 <option value="thermo_hygrometer">thermo_hygrometer</option>
+                <option value="light">light</option>
               </select>
             </label>
             <label class="stack">
@@ -205,6 +206,35 @@
               </div>
               <p class="hint">
                 Supports relative or absolute local paths, <code>http/https</code> URLs, and <code>mdi:icon-name</code>. Generated YAML still uses ESPHome <code>image:</code>, not <code>online_image</code>.
+              </p>
+            </div>
+            <div id="light-icon-fields" class="hidden">
+              <label class="stack">
+                <span>Off Icon</span>
+                <input id="field-off-icon" type="text" placeholder="assets/images/off.png / /abs/off.png / https://..." />
+              </label>
+              <label class="stack">
+                <span>On Icon</span>
+                <input id="field-on-icon" type="text" placeholder="assets/images/light.png / /abs/light.png / https://..." />
+              </label>
+              <div class="icon-preview-grid">
+                <div class="icon-preview-card">
+                  <span class="icon-preview-label">Off Preview</span>
+                  <div class="icon-preview-box">
+                    <img id="off-icon-preview-img" class="icon-preview-image" alt="Off icon preview" />
+                    <span id="off-icon-preview-fallback" class="icon-preview-fallback hidden">No Preview</span>
+                  </div>
+                </div>
+                <div class="icon-preview-card">
+                  <span class="icon-preview-label">On Preview</span>
+                  <div class="icon-preview-box">
+                    <img id="on-icon-preview-img" class="icon-preview-image" alt="On icon preview" />
+                    <span id="on-icon-preview-fallback" class="icon-preview-fallback hidden">No Preview</span>
+                  </div>
+                </div>
+              </div>
+              <p class="hint">
+                The light widget uses the off icon when the HA light state is <code>off</code>, and the on icon when the state is <code>on</code>.
               </p>
             </div>
             <div class="grid two">

@@ -24,9 +24,16 @@ export const THERMO_HYGROMETER_STYLE_COMPACT = "compact";
 export const DEFAULT_THERMO_WIDTH = 220;
 export const DEFAULT_THERMO_HEIGHT = 112;
 export const THERMO_VALUE_BOX_HEIGHT = 80;
+export const LIGHT_STYLE_ICON = "icon";
+export const DEFAULT_LIGHT_WIDTH = 220;
+export const DEFAULT_LIGHT_HEIGHT = 108;
 export const THERMO_ICON_PATHS = {
   temp: "mdi:thermometer",
   hum: "https://l2063610646.github.io/tools/humi.png",
+};
+export const LIGHT_ICON_PATHS = {
+  off: "assets/images/off.png",
+  on: "assets/images/light.png",
 };
 export const DEFAULT_BUTTON_BG_COLOR = "0xEEF3F0";
 export const SWITCH_WIDTH = 54;
@@ -103,6 +110,31 @@ export const ENTITY_CAPABILITIES = {
           style: THERMO_HYGROMETER_STYLE_COMPACT,
           temp_icon: THERMO_ICON_PATHS.temp,
           hum_icon: THERMO_ICON_PATHS.hum,
+        },
+      };
+    },
+  },
+  light: {
+    label: "light",
+    entityFields: [
+      { label: "Entity ID", defaultValue: (index) => `light.new_light_${index}` },
+    ],
+    styleOptions: [
+      { value: LIGHT_STYLE_ICON, label: "icon" },
+    ],
+    createEntity(index) {
+      return {
+        entityid: `light.new_light_${index}`,
+        type: "light",
+        props: {
+          x: 24,
+          y: 24,
+          width: DEFAULT_LIGHT_WIDTH,
+          height: DEFAULT_LIGHT_HEIGHT,
+          title: `Light ${index}`,
+          style: LIGHT_STYLE_ICON,
+          off_icon: LIGHT_ICON_PATHS.off,
+          on_icon: LIGHT_ICON_PATHS.on,
         },
       };
     },

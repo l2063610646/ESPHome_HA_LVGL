@@ -3,6 +3,8 @@ import {
   DEFAULT_DUAL_HEIGHT,
   DEFAULT_DUAL_WIDTH,
   DEFAULT_HEIGHT,
+  DEFAULT_LIGHT_HEIGHT,
+  DEFAULT_LIGHT_WIDTH,
   DEFAULT_THERMO_HEIGHT,
   DEFAULT_THERMO_WIDTH,
   DEFAULT_WIDTH,
@@ -10,6 +12,8 @@ import {
   DUAL_SWITCH_STYLE_COLUMNS,
   DUAL_SWITCH_STYLE_STACKED,
   ENTITY_CAPABILITIES,
+  LIGHT_ICON_PATHS,
+  LIGHT_STYLE_ICON,
   SWITCH_BUTTON_STYLE_HEIGHT,
   SWITCH_STYLE_BUTTON,
   SWITCH_STYLE_TOGGLE,
@@ -104,7 +108,7 @@ export function generateSpecYaml(state) {
   lines.push(`  bg_color: ${quoteYaml(state.screenBgColor)}`);
   lines.push("entities:");
   state.entities.forEach((entity) => {
-    if (entity.type === "switch") {
+    if (entity.type === "switch" || entity.type === "light") {
       lines.push(`  - entityid: ${quoteYaml(entity.entityids[0])}`);
     } else {
       lines.push("  - entityids:");
@@ -125,6 +129,14 @@ export function generateSpecYaml(state) {
       }
       if (normalizeIconSource(entity.props.hum_icon)) {
         lines.push(`      hum_icon: ${quoteYaml(entity.props.hum_icon)}`);
+      }
+    }
+    if (entity.type === "light") {
+      if (normalizeIconSource(entity.props.off_icon)) {
+        lines.push(`      off_icon: ${quoteYaml(entity.props.off_icon)}`);
+      }
+      if (normalizeIconSource(entity.props.on_icon)) {
+        lines.push(`      on_icon: ${quoteYaml(entity.props.on_icon)}`);
       }
     }
   });
@@ -301,6 +313,12 @@ export function normalizeEntity(entity, canvasWidth = BOARD_CONFIGS.nextion_35.w
       hum_icon: normalizeIconSource(
         props.hum_icon || props.humidity_icon || props.hum_image || THERMO_ICON_PATHS.hum
       ),
+      off_icon: normalizeIconSource(
+        props.off_icon || props.off_image || props.icon_off || LIGHT_ICON_PATHS.off
+      ),
+      on_icon: normalizeIconSource(
+        props.on_icon || props.on_image || props.icon_on || LIGHT_ICON_PATHS.on
+      ),
     },
   };
 }
@@ -348,6 +366,9 @@ export function normalizeType(value) {
   if (value === "thermo_hygrometer") {
     return "thermo_hygrometer";
   }
+  if (value === "light") {
+    return "light";
+  }
   return "switch";
 }
 
@@ -358,6 +379,9 @@ export function normalizeStyle(type, value) {
   if (type === "dual_switch") {
     return value === DUAL_SWITCH_STYLE_COLUMNS ? DUAL_SWITCH_STYLE_COLUMNS : DUAL_SWITCH_STYLE_STACKED;
   }
+  if (type === "light") {
+    return LIGHT_STYLE_ICON;
+  }
   return THERMO_HYGROMETER_STYLE_COMPACT;
 }
 
@@ -367,6 +391,9 @@ export function defaultTitleForType(type, entityids) {
   }
   if (type === "thermo_hygrometer") {
     return "Temperature & Humidity";
+  }
+  if (type === "light") {
+    return deriveTitle(entityids[0]);
   }
   return deriveTitle(entityids[0]);
 }
@@ -382,6 +409,9 @@ export function defaultWidthForType(type) {
   if (type === "thermo_hygrometer") {
     return DEFAULT_THERMO_WIDTH;
   }
+  if (type === "light") {
+    return DEFAULT_LIGHT_WIDTH;
+  }
   return DEFAULT_WIDTH;
 }
 
@@ -391,6 +421,9 @@ export function defaultHeightForType(type, style = SWITCH_STYLE_TOGGLE) {
   }
   if (type === "thermo_hygrometer") {
     return DEFAULT_THERMO_HEIGHT;
+  }
+  if (type === "light") {
+    return DEFAULT_LIGHT_HEIGHT;
   }
   return style === SWITCH_STYLE_BUTTON ? SWITCH_BUTTON_STYLE_HEIGHT : DEFAULT_HEIGHT;
 }
@@ -402,6 +435,9 @@ export function minWidthForType(type) {
   if (type === "thermo_hygrometer") {
     return 180;
   }
+  if (type === "light") {
+    return 150;
+  }
   return 150;
 }
 
@@ -411,6 +447,9 @@ export function minHeightForType(type, style = SWITCH_STYLE_TOGGLE) {
   }
   if (type === "thermo_hygrometer") {
     return DEFAULT_THERMO_HEIGHT;
+  }
+  if (type === "light") {
+    return DEFAULT_LIGHT_HEIGHT;
   }
   return style === SWITCH_STYLE_BUTTON ? SWITCH_BUTTON_STYLE_HEIGHT : 56;
 }
@@ -476,6 +515,12 @@ export function normalizeIconSource(value) {
   if (normalized === "hum.png" || normalized === "./hum.png") {
     return THERMO_ICON_PATHS.hum;
   }
+  if (normalized === "off.png" || normalized === "./off.png") {
+    return LIGHT_ICON_PATHS.off;
+  }
+  if (normalized === "light.png" || normalized === "./light.png" || normalized === "on.png" || normalized === "./on.png") {
+    return LIGHT_ICON_PATHS.on;
+  }
   return text;
 }
 
@@ -487,7 +532,7 @@ export function usesTopAlignedTitle(entity) {
 }
 
 export function shouldRenderWidgetTitle(entity) {
-  return entity.type !== "thermo_hygrometer";
+  return entity.type !== "thermo_hygrometer" && entity.type !== "light";
 }
 
 export function deriveTitle(entityId) {

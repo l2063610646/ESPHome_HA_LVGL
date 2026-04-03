@@ -43,6 +43,8 @@ Internally, the editor stores page state in a compact YAML-friendly shape:
   `base_config`, optional `rotation`, optional `device`, optional `wifi`, optional `screen`.
 - `type: switch`
   Uses one `entityid`.
+- `type: light`
+  Uses one `entityid`.
 - `type: dual_switch`
   Uses exactly two `entityids`.
 - `type: thermo_hygrometer`
@@ -54,6 +56,7 @@ Supported styles:
 
 - `switch.props.style: toggle`
 - `switch.props.style: button`
+- `light.props.style: icon`
 - `dual_switch.props.style: stacked`
 - `dual_switch.props.style: columns`
 - `thermo_hygrometer.props.style: compact`

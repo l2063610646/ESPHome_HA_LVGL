@@ -8,6 +8,7 @@ import {
   DUAL_GROUP_HEIGHT,
   DUAL_GROUP_WIDTH,
   DUAL_SWITCH_STYLE_COLUMNS,
+  LIGHT_ICON_PATHS,
   SWITCH_BUTTON_HEIGHT,
   SWITCH_STYLE_BUTTON,
   SWITCH_HEIGHT,
@@ -83,8 +84,10 @@ export function renderCanvas(state, elements, callbacks) {
       widget.append(renderSingleSwitchPreview(entity));
     } else if (entity.type === "dual_switch") {
       widget.append(renderDualSwitchPreview(entity));
-    } else {
+    } else if (entity.type === "thermo_hygrometer") {
       widget.append(renderThermoHygrometerPreview(entity));
+    } else {
+      widget.append(renderLightPreview(entity));
     }
 
     const bounds = document.createElement("span");
@@ -124,6 +127,7 @@ export function renderInspector(entity, elements) {
     dualFields,
     switchStyleFields,
     thermoIconFields,
+    lightIconFields,
     fieldType,
     fieldEntityIdLabel,
     fieldEntityId,
@@ -137,6 +141,8 @@ export function renderInspector(entity, elements) {
     fieldHeight,
     fieldTempIcon,
     fieldHumIcon,
+    fieldOffIcon,
+    fieldOnIcon,
   } = elements;
 
   const hasEntity = Boolean(entity);
@@ -151,6 +157,7 @@ export function renderInspector(entity, elements) {
   dualFields.classList.toggle("hidden", !hasSecondEntity);
   switchStyleFields.classList.toggle("hidden", false);
   thermoIconFields.classList.toggle("hidden", entity.type !== "thermo_hygrometer");
+  lightIconFields.classList.toggle("hidden", entity.type !== "light");
   rebuildStyleOptions(fieldStyle, entity.type);
   fieldType.value = entity.type;
   fieldEntityIdLabel.textContent = capability.entityFields[0]?.label || "Entity ID";
@@ -165,7 +172,10 @@ export function renderInspector(entity, elements) {
   fieldHeight.value = entity.props.height;
   fieldTempIcon.value = entity.props.temp_icon ?? "";
   fieldHumIcon.value = entity.props.hum_icon ?? "";
+  fieldOffIcon.value = entity.props.off_icon ?? "";
+  fieldOnIcon.value = entity.props.on_icon ?? "";
   updateThermoIconInspectorPreview(elements);
+  updateLightIconInspectorPreview(elements);
 }
 
 export function updateThermoIconInspectorPreview(elements) {
@@ -180,6 +190,21 @@ export function updateThermoIconInspectorPreview(elements) {
     elements.humIconPreviewFallback,
     elements.fieldHumIcon.value,
     THERMO_ICON_PATHS.hum
+  );
+}
+
+export function updateLightIconInspectorPreview(elements) {
+  updateSingleIconPreview(
+    elements.offIconPreviewImg,
+    elements.offIconPreviewFallback,
+    elements.fieldOffIcon.value,
+    LIGHT_ICON_PATHS.off
+  );
+  updateSingleIconPreview(
+    elements.onIconPreviewImg,
+    elements.onIconPreviewFallback,
+    elements.fieldOnIcon.value,
+    LIGHT_ICON_PATHS.on
   );
 }
 
@@ -289,6 +314,34 @@ function renderThermoHygrometerPreview(entity) {
     group.append(valueBox);
   });
 
+  return group;
+}
+
+function renderLightPreview(entity) {
+  const group = document.createElement("div");
+  group.className = "light-widget-group";
+
+  const icon = document.createElement("img");
+  icon.className = "light-widget-icon";
+  icon.src = resolvePreviewImageSource(entity.props.off_icon);
+  icon.alt = "Light off";
+  icon.addEventListener("error", () => {
+    if (icon.dataset.fallbackApplied === "true") {
+      return;
+    }
+    icon.dataset.fallbackApplied = "true";
+    icon.src = resolvePreviewImageSource(LIGHT_ICON_PATHS.off);
+  });
+
+  const actionButton = document.createElement("div");
+  actionButton.className = "light-action-button";
+
+  const actionLabel = document.createElement("span");
+  actionLabel.className = "light-action-label";
+  actionLabel.textContent = "OFF";
+
+  actionButton.append(actionLabel);
+  group.append(icon, actionButton);
   return group;
 }
 

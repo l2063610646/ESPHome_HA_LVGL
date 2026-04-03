@@ -8,6 +8,7 @@ import {
   setActivePaletteSwatch,
   syncCanvasUi,
   updateCanvasAppearance,
+  updateLightIconInspectorPreview,
   updateThermoIconInspectorPreview,
 } from "./preview.js";
 import {
@@ -80,12 +81,19 @@ const elements = {
   dualFields: document.getElementById("dual-fields"),
   switchStyleFields: document.getElementById("switch-style-fields"),
   thermoIconFields: document.getElementById("thermo-icon-fields"),
+  lightIconFields: document.getElementById("light-icon-fields"),
   fieldTempIcon: document.getElementById("field-temp-icon"),
   fieldHumIcon: document.getElementById("field-hum-icon"),
+  fieldOffIcon: document.getElementById("field-off-icon"),
+  fieldOnIcon: document.getElementById("field-on-icon"),
   tempIconPreviewImg: document.getElementById("temp-icon-preview-img"),
   humIconPreviewImg: document.getElementById("hum-icon-preview-img"),
   tempIconPreviewFallback: document.getElementById("temp-icon-preview-fallback"),
   humIconPreviewFallback: document.getElementById("hum-icon-preview-fallback"),
+  offIconPreviewImg: document.getElementById("off-icon-preview-img"),
+  onIconPreviewImg: document.getElementById("on-icon-preview-img"),
+  offIconPreviewFallback: document.getElementById("off-icon-preview-fallback"),
+  onIconPreviewFallback: document.getElementById("on-icon-preview-fallback"),
 };
 
 elements.addEntityBtn.addEventListener("click", () => {
@@ -211,6 +219,8 @@ elements.deleteBtn.addEventListener("click", () => {
   elements.fieldStyle,
   elements.fieldTempIcon,
   elements.fieldHumIcon,
+  elements.fieldOffIcon,
+  elements.fieldOnIcon,
   elements.fieldX,
   elements.fieldY,
   elements.fieldWidth,
@@ -401,7 +411,7 @@ function handleInspectorChange() {
   if (trimmedEntityId) {
     entity.entityids[0] = trimmedEntityId;
   }
-  if (entity.type !== "switch") {
+  if (entity.type === "dual_switch" || entity.type === "thermo_hygrometer") {
     const trimmedEntityId2 = elements.fieldEntityId2.value.trim();
     if (trimmedEntityId2) {
       entity.entityids[1] = trimmedEntityId2;
@@ -412,6 +422,10 @@ function handleInspectorChange() {
   if (entity.type === "thermo_hygrometer") {
     entity.props.temp_icon = normalizeIconSource(elements.fieldTempIcon.value);
     entity.props.hum_icon = normalizeIconSource(elements.fieldHumIcon.value);
+  }
+  if (entity.type === "light") {
+    entity.props.off_icon = normalizeIconSource(elements.fieldOffIcon.value);
+    entity.props.on_icon = normalizeIconSource(elements.fieldOnIcon.value);
   }
 
   const pendingWidth = readPendingNumber(elements.fieldWidth.value);
@@ -460,6 +474,10 @@ function handleInspectorCommit() {
   if (entity.type === "thermo_hygrometer") {
     entity.props.temp_icon = normalizeIconSource(elements.fieldTempIcon.value);
     entity.props.hum_icon = normalizeIconSource(elements.fieldHumIcon.value);
+  }
+  if (entity.type === "light") {
+    entity.props.off_icon = normalizeIconSource(elements.fieldOffIcon.value);
+    entity.props.on_icon = normalizeIconSource(elements.fieldOnIcon.value);
   }
   entity.props.width = clampNumber(
     elements.fieldWidth.value,
@@ -590,6 +608,7 @@ function syncFormControls() {
   setActivePaletteSwatch(elements.screenPalette, elements.screenBgColorInput.value);
   renderDeviceNameHelp();
   updateThermoIconInspectorPreview(elements);
+  updateLightIconInspectorPreview(elements);
 }
 
 function renderDeviceNameHelp() {

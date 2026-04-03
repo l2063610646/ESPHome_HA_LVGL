@@ -1,4 +1,4 @@
-import { DEFAULT_BUTTON_BG_COLOR, THERMO_ICON_PATHS } from "./constants.js";
+import { DEFAULT_BUTTON_BG_COLOR, LIGHT_ICON_PATHS, THERMO_ICON_PATHS } from "./constants.js";
 import {
   getEffectiveFriendlyName,
   normalizeEntities,
@@ -84,6 +84,14 @@ function getValueLabelId(entity, index) {
 
 function getThermoImageId(entity, kind) {
   return `${kind}_${getEntitySlug(entity)}_icon`;
+}
+
+function getLightImageId(entity, kind) {
+  return `${kind}_${getEntitySlug(entity)}_icon`;
+}
+
+function getLightStateLabelId(entity) {
+  return `light_state_${getEntitySlug(entity)}`;
 }
 
 function getChannelLabel(index) {
@@ -417,26 +425,47 @@ function renderSwitchBlock(entities) {
 
 function renderTextSensorBlock(entities) {
   return entities
-    .filter((entity) => entity.type === "thermo_hygrometer")
-    .flatMap((entity) => entity.entityids.map((_, index) => renderTextSensorComponent(entity, index)))
+    .filter((entity) => entity.type === "thermo_hygrometer" || entity.type === "light")
+    .flatMap((entity) =>
+      entity.type === "thermo_hygrometer"
+        ? entity.entityids.map((_, index) => renderTextSensorComponent(entity, index))
+        : [renderLightStateTextSensorComponent(entity)]
+    )
     .join("\n");
 }
 
 function renderImageBlock(entities) {
   return entities
-    .filter((entity) => entity.type === "thermo_hygrometer")
-    .flatMap((entity) => [
-      `- file: ${quoteYaml(entity.props.temp_icon || THERMO_ICON_PATHS.temp)}
+    .filter((entity) => entity.type === "thermo_hygrometer" || entity.type === "light")
+    .flatMap((entity) => {
+      if (entity.type === "thermo_hygrometer") {
+        return [
+          `- file: ${quoteYaml(entity.props.temp_icon || THERMO_ICON_PATHS.temp)}
   id: ${getThermoImageId(entity, "temp")}
   type: rgb565
   transparency: alpha_channel
   resize: 32x32`,
-      `- file: ${quoteYaml(entity.props.hum_icon || THERMO_ICON_PATHS.hum)}
+          `- file: ${quoteYaml(entity.props.hum_icon || THERMO_ICON_PATHS.hum)}
   id: ${getThermoImageId(entity, "hum")}
   type: rgb565
   transparency: alpha_channel
   resize: 32x32`,
-    ])
+        ];
+      }
+
+      return [
+        `- file: ${quoteYaml(entity.props.off_icon || LIGHT_ICON_PATHS.off)}
+  id: ${getLightImageId(entity, "off")}
+  type: rgb565
+  transparency: alpha_channel
+  resize: 32x32`,
+        `- file: ${quoteYaml(entity.props.on_icon || LIGHT_ICON_PATHS.on)}
+  id: ${getLightImageId(entity, "on")}
+  type: rgb565
+  transparency: alpha_channel
+  resize: 32x32`,
+      ];
+    })
     .join("\n");
 }
 
@@ -474,6 +503,27 @@ function renderTextSensorComponent(entity, index) {
           return value.c_str();`;
 }
 
+function renderLightStateTextSensorComponent(entity) {
+  return `- platform: homeassistant
+  id: ${getHaTextSensorId(entity, 0)}
+  entity_id: ${quoteYaml(entity.entityids[0])}
+  on_value:
+    - lvgl.widget.update:
+        id: ${getWidgetId(entity, 0)}
+        state:
+          checked: !lambda return x == "on";
+    - lvgl.image.update:
+        id: ${getLightImageId(entity, "state")}
+        src: !lambda |-
+          return x == "on" ? id(${getLightImageId(entity, "on")}) : id(${getLightImageId(entity, "off")});
+    - lvgl.label.update:
+        id: ${getLightStateLabelId(entity)}
+        text: !lambda |-
+          static std::string value;
+          value = x == "on" ? "ON" : "OFF";
+          return value.c_str();`;
+}
+
 function renderWidget(entity) {
   if (entity.type === "switch") {
     return entity.props.style === "button"
@@ -484,6 +534,9 @@ function renderWidget(entity) {
     return entity.props.style === "columns"
       ? renderDualSwitchColumnsWidget(entity)
       : renderDualSwitchStackedWidget(entity);
+  }
+  if (entity.type === "light") {
+    return renderLightWidget(entity);
   }
   return renderThermoHygrometerWidget(entity);
 }
@@ -843,4 +896,93 @@ function renderThermoHygrometerWidget(entity) {
                 align: BOTTOM_MID
                 text: "${getMetricCaption(1)}: --${getMetricSuffix(1)}"
                 text_color: 0x24323A`;
+}
+
+function renderLightWidget(entity) {
+  return `- obj:
+    id: ${getContainerId(entity)}
+    x: ${entity.props.x}
+    y: ${entity.props.y}
+    width: ${entity.props.width}
+    height: ${entity.props.height}
+    radius: 14
+    border_width: 1
+    border_color: 0xD7DDD9
+    pad_all: 0
+    bg_opa: COVER
+    bg_color: 0xF8FBF9
+    shadow_width: 4
+    shadow_color: 0x1F2933
+    shadow_opa: 6%
+    scrollbar_mode: "OFF"
+    widgets:
+      - obj:
+          align: CENTER
+          width: 80
+          height: 90
+          radius: 0
+          border_width: 0
+          pad_all: 0
+          bg_opa: TRANSP
+          shadow_width: 0
+          scrollbar_mode: "OFF"
+          widgets:
+            - image:
+                id: ${getLightImageId(entity, "state")}
+                align: TOP_MID
+                src: !lambda |-
+                  return id(${getHaTextSensorId(entity, 0)}).state == "on"
+                    ? id(${getLightImageId(entity, "on")})
+                    : id(${getLightImageId(entity, "off")});
+            - button:
+                id: ${getWidgetId(entity, 0)}
+                align: BOTTOM_MID
+                width: 80
+                height: 30
+                checkable: true
+                radius: 12
+                pad_all: 0
+                border_width: 1
+                border_color: 0xD7DDD9
+                bg_opa: COVER
+                bg_color: 0xEEF3F0
+                checked:
+                  bg_color: 0xFFE3A1
+                shadow_width: 0
+                state:
+                  checked: !lambda return id(${getHaTextSensorId(entity, 0)}).state == "on";
+                widgets:
+                  - label:
+                      id: ${getLightStateLabelId(entity)}
+                      align: CENTER
+                      text: !lambda |-
+                        static std::string value;
+                        value = id(${getHaTextSensorId(entity, 0)}).state == "on" ? "ON" : "OFF";
+                        return value.c_str();
+                      text_color: 0x24323A
+                on_change:
+                  then:
+                    - lvgl.image.update:
+                        id: ${getLightImageId(entity, "state")}
+                        src: !lambda |-
+                          return x ? id(${getLightImageId(entity, "on")}) : id(${getLightImageId(entity, "off")});
+                    - lvgl.label.update:
+                        id: ${getLightStateLabelId(entity)}
+                        text: !lambda |-
+                          static std::string value;
+                          value = x ? "ON" : "OFF";
+                          return value.c_str();
+                    - if:
+                        condition:
+                          lambda: return x;
+                        then:
+                          - homeassistant.service:
+                              service: light.turn_on
+                              data:
+                                entity_id: ${quoteYaml(entity.entityids[0])}
+                        else:
+                          - homeassistant.service:
+                              service: light.turn_off
+                              data:
+                                entity_id: ${quoteYaml(entity.entityids[0])}`;
 }
