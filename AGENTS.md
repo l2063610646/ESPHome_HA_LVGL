@@ -55,8 +55,6 @@ The old Python build pipeline is not part of the normal workflow anymore.
   Maps to generated `lvgl.bg_color`.
 - `type: switch`
   Uses one `entityid`.
-- `type: dual_switch`
-  Uses exactly two `entityids`.
 - `type: thermo_hygrometer`
   Uses exactly two `entityids`, ordered as temperature sensor then humidity sensor.
 - Common widget metadata lives in `props`.
@@ -65,8 +63,6 @@ Current style support:
 
 - `switch.props.style: toggle`
 - `switch.props.style: button`
-- `dual_switch.props.style: stacked`
-- `dual_switch.props.style: columns`
 - `thermo_hygrometer.props.style: compact`
 
 When adding more built-in styles, prefer extending `props.style` instead of creating a new widget type unless the interaction model is genuinely different.

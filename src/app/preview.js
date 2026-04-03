@@ -3,11 +3,6 @@ import {
   DEFAULT_BUTTON_BG_COLOR,
   DEFAULT_LABEL_PAD_LEFT,
   DEFAULT_SWITCH_PAD_RIGHT,
-  DUAL_BUTTON_HEIGHT,
-  DUAL_COLUMNS_BUTTON_HEIGHT,
-  DUAL_GROUP_HEIGHT,
-  DUAL_GROUP_WIDTH,
-  DUAL_SWITCH_STYLE_COLUMNS,
   LIGHT_ICON_PATHS,
   SWITCH_BUTTON_HEIGHT,
   SWITCH_STYLE_BUTTON,
@@ -82,8 +77,6 @@ export function renderCanvas(state, elements, callbacks) {
 
     if (entity.type === "switch") {
       widget.append(renderSingleSwitchPreview(entity));
-    } else if (entity.type === "dual_switch") {
-      widget.append(renderDualSwitchPreview(entity));
     } else if (entity.type === "thermo_hygrometer") {
       widget.append(renderThermoHygrometerPreview(entity));
     } else {
@@ -234,52 +227,6 @@ function renderSingleButtonSwitchPreview(entity) {
   label.textContent = "Toggle";
   button.append(label);
   return button;
-}
-
-function renderDualSwitchPreview(entity) {
-  if (entity.props.style === DUAL_SWITCH_STYLE_COLUMNS) {
-    return renderDualSwitchColumnsPreview();
-  }
-  const group = document.createElement("div");
-  group.className = "dual-switch-group";
-  group.style.right = `${DEFAULT_SWITCH_PAD_RIGHT}px`;
-  group.style.width = `${DUAL_GROUP_WIDTH}px`;
-  group.style.height = `${DUAL_GROUP_HEIGHT}px`;
-
-  for (let index = 0; index < 2; index += 1) {
-    const button = document.createElement("div");
-    button.className = "dual-switch-button";
-    button.style.height = `${DUAL_BUTTON_HEIGHT}px`;
-    button.style.background = DEFAULT_BUTTON_BG_COLOR;
-
-    const label = document.createElement("span");
-    label.className = "dual-button-label";
-    label.textContent = `CH${index + 1}`;
-    button.append(label);
-    group.append(button);
-  }
-
-  return group;
-}
-
-function renderDualSwitchColumnsPreview() {
-  const group = document.createElement("div");
-  group.className = "dual-columns-group";
-
-  for (let index = 0; index < 2; index += 1) {
-    const button = document.createElement("div");
-    button.className = "dual-columns-button";
-    button.style.height = `${DUAL_COLUMNS_BUTTON_HEIGHT}px`;
-    button.style.background = DEFAULT_BUTTON_BG_COLOR;
-
-    const label = document.createElement("span");
-    label.className = "dual-button-label";
-    label.textContent = `CH${index + 1}`;
-    button.append(label);
-    group.append(button);
-  }
-
-  return group;
 }
 
 function renderThermoHygrometerPreview(entity) {

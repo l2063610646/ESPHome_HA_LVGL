@@ -1,16 +1,11 @@
 import {
   BOARD_CONFIGS,
-  DEFAULT_DUAL_HEIGHT,
-  DEFAULT_DUAL_WIDTH,
   DEFAULT_HEIGHT,
   DEFAULT_LIGHT_HEIGHT,
   DEFAULT_LIGHT_WIDTH,
   DEFAULT_THERMO_HEIGHT,
   DEFAULT_THERMO_WIDTH,
   DEFAULT_WIDTH,
-  DUAL_COLUMNS_STYLE_HEIGHT,
-  DUAL_SWITCH_STYLE_COLUMNS,
-  DUAL_SWITCH_STYLE_STACKED,
   ENTITY_CAPABILITIES,
   LIGHT_ICON_PATHS,
   LIGHT_STYLE_ICON,
@@ -244,7 +239,7 @@ export function parseSpecYaml(source) {
       }
       current = {
         entityids: [],
-        type: "dual_switch",
+        type: "switch",
         props: {},
       };
       inProps = false;
@@ -360,9 +355,6 @@ export function normalizeEntityIds(entity, type) {
 }
 
 export function normalizeType(value) {
-  if (value === "dual_switch") {
-    return "dual_switch";
-  }
   if (value === "thermo_hygrometer") {
     return "thermo_hygrometer";
   }
@@ -376,9 +368,6 @@ export function normalizeStyle(type, value) {
   if (type === "switch") {
     return value === SWITCH_STYLE_BUTTON ? SWITCH_STYLE_BUTTON : SWITCH_STYLE_TOGGLE;
   }
-  if (type === "dual_switch") {
-    return value === DUAL_SWITCH_STYLE_COLUMNS ? DUAL_SWITCH_STYLE_COLUMNS : DUAL_SWITCH_STYLE_STACKED;
-  }
   if (type === "light") {
     return LIGHT_STYLE_ICON;
   }
@@ -386,9 +375,6 @@ export function normalizeStyle(type, value) {
 }
 
 export function defaultTitleForType(type, entityids) {
-  if (type === "dual_switch") {
-    return "Dual Switch";
-  }
   if (type === "thermo_hygrometer") {
     return "Temperature & Humidity";
   }
@@ -403,9 +389,6 @@ export function defaultTitleForEntity(entity) {
 }
 
 export function defaultWidthForType(type) {
-  if (type === "dual_switch") {
-    return DEFAULT_DUAL_WIDTH;
-  }
   if (type === "thermo_hygrometer") {
     return DEFAULT_THERMO_WIDTH;
   }
@@ -416,9 +399,6 @@ export function defaultWidthForType(type) {
 }
 
 export function defaultHeightForType(type, style = SWITCH_STYLE_TOGGLE) {
-  if (type === "dual_switch") {
-    return style === DUAL_SWITCH_STYLE_COLUMNS ? DUAL_COLUMNS_STYLE_HEIGHT : DEFAULT_DUAL_HEIGHT;
-  }
   if (type === "thermo_hygrometer") {
     return DEFAULT_THERMO_HEIGHT;
   }
@@ -429,9 +409,6 @@ export function defaultHeightForType(type, style = SWITCH_STYLE_TOGGLE) {
 }
 
 export function minWidthForType(type) {
-  if (type === "dual_switch") {
-    return 220;
-  }
   if (type === "thermo_hygrometer") {
     return 180;
   }
@@ -442,9 +419,6 @@ export function minWidthForType(type) {
 }
 
 export function minHeightForType(type, style = SWITCH_STYLE_TOGGLE) {
-  if (type === "dual_switch") {
-    return style === DUAL_SWITCH_STYLE_COLUMNS ? DUAL_COLUMNS_STYLE_HEIGHT : 124;
-  }
   if (type === "thermo_hygrometer") {
     return DEFAULT_THERMO_HEIGHT;
   }
@@ -525,10 +499,7 @@ export function normalizeIconSource(value) {
 }
 
 export function usesTopAlignedTitle(entity) {
-  return (
-    (entity.type === "switch" && entity.props.style === SWITCH_STYLE_BUTTON) ||
-    (entity.type === "dual_switch" && entity.props.style === DUAL_SWITCH_STYLE_COLUMNS)
-  );
+  return entity.type === "switch" && entity.props.style === SWITCH_STYLE_BUTTON;
 }
 
 export function shouldRenderWidgetTitle(entity) {

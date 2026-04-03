@@ -45,8 +45,6 @@ Internally, the editor stores page state in a compact YAML-friendly shape:
   Uses one `entityid`.
 - `type: light`
   Uses one `entityid`.
-- `type: dual_switch`
-  Uses exactly two `entityids`.
 - `type: thermo_hygrometer`
   Uses exactly two `entityids`, ordered as temperature sensor then humidity sensor.
 - Common widget metadata lives in `props`
@@ -57,8 +55,6 @@ Supported styles:
 - `switch.props.style: toggle`
 - `switch.props.style: button`
 - `light.props.style: icon`
-- `dual_switch.props.style: stacked`
-- `dual_switch.props.style: columns`
 - `thermo_hygrometer.props.style: compact`
 
 Example:

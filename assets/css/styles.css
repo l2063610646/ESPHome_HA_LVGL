@@ -412,44 +412,6 @@ textarea {
   letter-spacing: 0.06em;
 }
 
-.dual-switch-group {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  display: grid;
-  align-content: center;
-  gap: 10px;
-}
-
-.dual-switch-button {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 12px;
-  border: 1px solid #b9c9c2;
-  background: #eef3f0;
-  box-shadow: none;
-}
-
-.dual-columns-group {
-  position: absolute;
-  left: 16px;
-  right: 16px;
-  bottom: 12px;
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
-}
-
-.dual-columns-button {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 12px;
-  border: 1px solid #b9c9c2;
-  background: #eef3f0;
-}
-
 .thermo-group {
   position: absolute;
   left: 16px;
@@ -522,13 +484,6 @@ textarea {
   font-weight: 700;
   letter-spacing: 0.08em;
   color: #24323a;
-}
-
-.dual-button-label {
-  font-size: 13px;
-  font-weight: 700;
-  color: #24323a;
-  letter-spacing: 0.08em;
 }
 
 .widget-bounds {

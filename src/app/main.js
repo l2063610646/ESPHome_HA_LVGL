@@ -411,7 +411,7 @@ function handleInspectorChange() {
   if (trimmedEntityId) {
     entity.entityids[0] = trimmedEntityId;
   }
-  if (entity.type === "dual_switch" || entity.type === "thermo_hygrometer") {
+  if (entity.type === "thermo_hygrometer") {
     const trimmedEntityId2 = elements.fieldEntityId2.value.trim();
     if (trimmedEntityId2) {
       entity.entityids[1] = trimmedEntityId2;
