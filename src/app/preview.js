@@ -210,6 +210,10 @@ function renderSingleSwitchPreview(entity) {
   switchShell.style.right = `${DEFAULT_SWITCH_PAD_RIGHT}px`;
   switchShell.style.width = `${SWITCH_WIDTH}px`;
   switchShell.style.height = `${SWITCH_HEIGHT}px`;
+
+  const knob = document.createElement("span");
+  knob.className = "widget-switch-knob";
+  switchShell.append(knob);
   return switchShell;
 }
 

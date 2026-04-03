@@ -379,26 +379,23 @@ textarea {
   top: 50%;
   transform: translateY(-50%);
   border-radius: 999px;
-  background: linear-gradient(135deg, #c9d5d0, #eef3f0);
-  border: 1px solid rgba(31, 41, 51, 0.1);
+  background: #d8dbe2;
+  border: none;
+  box-shadow: none;
+  overflow: hidden;
 }
 
-.widget-switch.dual {
-  position: relative;
-  top: auto;
-  transform: none;
-}
-
-.widget-switch::after {
-  content: "";
+.widget-switch-knob {
   position: absolute;
-  top: 4px;
-  left: 4px;
-  width: 20px;
-  height: 20px;
+  top: 50%;
+  left: 2px;
+  width: 24px;
+  height: 24px;
+  transform: translateY(-50%);
   border-radius: 50%;
   background: white;
-  box-shadow: 0 4px 10px rgba(31, 41, 51, 0.18);
+  box-shadow: none;
+  border: none;
 }
 
 .single-switch-button {

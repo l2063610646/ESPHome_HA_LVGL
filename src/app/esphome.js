@@ -1,4 +1,10 @@
-import { DEFAULT_BUTTON_BG_COLOR, LIGHT_ICON_PATHS, THERMO_ICON_PATHS } from "./constants.js";
+import {
+  DEFAULT_BUTTON_BG_COLOR,
+  LIGHT_ICON_PATHS,
+  SWITCH_HEIGHT,
+  SWITCH_WIDTH,
+  THERMO_ICON_PATHS,
+} from "./constants.js";
 import {
   getEffectiveFriendlyName,
   normalizeEntities,
@@ -564,6 +570,8 @@ function renderSingleSwitchToggleWidget(entity) {
           id: ${getWidgetId(entity, 0)}
           align: RIGHT_MID
           x: -16
+          width: ${SWITCH_WIDTH}
+          height: ${SWITCH_HEIGHT}
           state:
             checked: !lambda return id(${getHaSwitchId(entity, 0)}).state;
           on_change:
