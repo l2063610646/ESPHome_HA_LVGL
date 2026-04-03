@@ -16,15 +16,19 @@ export const DEFAULT_THERMO_WIDTH = 220;
 export const DEFAULT_THERMO_HEIGHT = 112;
 export const THERMO_VALUE_BOX_HEIGHT = 80;
 export const LIGHT_STYLE_ICON = "icon";
-export const DEFAULT_LIGHT_WIDTH = 220;
-export const DEFAULT_LIGHT_HEIGHT = 108;
+export const LIGHT_PAD_ALL = 5;
+export const LIGHT_PAD_ROW = 2;
+export const LIGHT_DEFAULT_ICON_SIZE = 36;
+export const LIGHT_LABEL_HEIGHT = 14;
+export const LIGHT_LABEL_MIN_WIDTH = 24;
+export const DEFAULT_LIGHT_WIDTH = Math.max(LIGHT_DEFAULT_ICON_SIZE, LIGHT_LABEL_MIN_WIDTH) + LIGHT_PAD_ALL * 2;
+export const DEFAULT_LIGHT_HEIGHT = LIGHT_DEFAULT_ICON_SIZE + LIGHT_LABEL_HEIGHT + LIGHT_PAD_ALL * 2 + LIGHT_PAD_ROW;
 export const THERMO_ICON_PATHS = {
   temp: "mdi:thermometer",
-  hum: "https://l2063610646.github.io/tools/humi.png",
+  hum: "https://l2063610646.github.io/ESPHome_HA_LVGL/assets/images/humi.png",
 };
 export const LIGHT_ICON_PATHS = {
-  off: "assets/images/off.png",
-  on: "assets/images/light.png",
+  on: "https://l2063610646.github.io/ESPHome_HA_LVGL/assets/images/light.png",
 };
 export const DEFAULT_BUTTON_BG_COLOR = "0xEEF3F0";
 export const SWITCH_WIDTH = 54;
@@ -99,8 +103,7 @@ export const ENTITY_CAPABILITIES = {
           height: DEFAULT_LIGHT_HEIGHT,
           title: `Light ${index}`,
           style: LIGHT_STYLE_ICON,
-          off_icon: LIGHT_ICON_PATHS.off,
-          on_icon: LIGHT_ICON_PATHS.on,
+          icon: LIGHT_ICON_PATHS.on,
         },
       };
     },

@@ -134,8 +134,7 @@ export function renderInspector(entity, elements) {
     fieldHeight,
     fieldTempIcon,
     fieldHumIcon,
-    fieldOffIcon,
-    fieldOnIcon,
+    fieldLightIcon,
   } = elements;
 
   const hasEntity = Boolean(entity);
@@ -165,8 +164,7 @@ export function renderInspector(entity, elements) {
   fieldHeight.value = entity.props.height;
   fieldTempIcon.value = entity.props.temp_icon ?? "";
   fieldHumIcon.value = entity.props.hum_icon ?? "";
-  fieldOffIcon.value = entity.props.off_icon ?? "";
-  fieldOnIcon.value = entity.props.on_icon ?? "";
+  fieldLightIcon.value = entity.props.icon ?? "";
   updateThermoIconInspectorPreview(elements);
   updateLightIconInspectorPreview(elements);
 }
@@ -188,15 +186,9 @@ export function updateThermoIconInspectorPreview(elements) {
 
 export function updateLightIconInspectorPreview(elements) {
   updateSingleIconPreview(
-    elements.offIconPreviewImg,
-    elements.offIconPreviewFallback,
-    elements.fieldOffIcon.value,
-    LIGHT_ICON_PATHS.off
-  );
-  updateSingleIconPreview(
-    elements.onIconPreviewImg,
-    elements.onIconPreviewFallback,
-    elements.fieldOnIcon.value,
+    elements.lightIconPreviewImg,
+    elements.lightIconPreviewFallback,
+    elements.fieldLightIcon.value,
     LIGHT_ICON_PATHS.on
   );
 }
@@ -270,29 +262,25 @@ function renderThermoHygrometerPreview(entity) {
 
 function renderLightPreview(entity) {
   const group = document.createElement("div");
-  group.className = "light-widget-group";
+  group.className = "light-widget-group off";
 
   const icon = document.createElement("img");
   icon.className = "light-widget-icon";
-  icon.src = resolvePreviewImageSource(entity.props.off_icon);
-  icon.alt = "Light off";
+  icon.src = resolvePreviewImageSource(entity.props.icon);
+  icon.alt = "Light";
   icon.addEventListener("error", () => {
     if (icon.dataset.fallbackApplied === "true") {
       return;
     }
     icon.dataset.fallbackApplied = "true";
-    icon.src = resolvePreviewImageSource(LIGHT_ICON_PATHS.off);
+    icon.src = resolvePreviewImageSource(LIGHT_ICON_PATHS.on);
   });
-
-  const actionButton = document.createElement("div");
-  actionButton.className = "light-action-button";
 
   const actionLabel = document.createElement("span");
   actionLabel.className = "light-action-label";
   actionLabel.textContent = "OFF";
 
-  actionButton.append(actionLabel);
-  group.append(icon, actionButton);
+  group.append(icon, actionLabel);
   return group;
 }
 

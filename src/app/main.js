@@ -84,16 +84,13 @@ const elements = {
   lightIconFields: document.getElementById("light-icon-fields"),
   fieldTempIcon: document.getElementById("field-temp-icon"),
   fieldHumIcon: document.getElementById("field-hum-icon"),
-  fieldOffIcon: document.getElementById("field-off-icon"),
-  fieldOnIcon: document.getElementById("field-on-icon"),
+  fieldLightIcon: document.getElementById("field-light-icon"),
   tempIconPreviewImg: document.getElementById("temp-icon-preview-img"),
   humIconPreviewImg: document.getElementById("hum-icon-preview-img"),
   tempIconPreviewFallback: document.getElementById("temp-icon-preview-fallback"),
   humIconPreviewFallback: document.getElementById("hum-icon-preview-fallback"),
-  offIconPreviewImg: document.getElementById("off-icon-preview-img"),
-  onIconPreviewImg: document.getElementById("on-icon-preview-img"),
-  offIconPreviewFallback: document.getElementById("off-icon-preview-fallback"),
-  onIconPreviewFallback: document.getElementById("on-icon-preview-fallback"),
+  lightIconPreviewImg: document.getElementById("light-icon-preview-img"),
+  lightIconPreviewFallback: document.getElementById("light-icon-preview-fallback"),
 };
 
 elements.addEntityBtn.addEventListener("click", () => {
@@ -219,8 +216,7 @@ elements.deleteBtn.addEventListener("click", () => {
   elements.fieldStyle,
   elements.fieldTempIcon,
   elements.fieldHumIcon,
-  elements.fieldOffIcon,
-  elements.fieldOnIcon,
+  elements.fieldLightIcon,
   elements.fieldX,
   elements.fieldY,
   elements.fieldWidth,
@@ -424,8 +420,7 @@ function handleInspectorChange() {
     entity.props.hum_icon = normalizeIconSource(elements.fieldHumIcon.value);
   }
   if (entity.type === "light") {
-    entity.props.off_icon = normalizeIconSource(elements.fieldOffIcon.value);
-    entity.props.on_icon = normalizeIconSource(elements.fieldOnIcon.value);
+    entity.props.icon = normalizeIconSource(elements.fieldLightIcon.value);
   }
 
   const pendingWidth = readPendingNumber(elements.fieldWidth.value);
@@ -476,8 +471,7 @@ function handleInspectorCommit() {
     entity.props.hum_icon = normalizeIconSource(elements.fieldHumIcon.value);
   }
   if (entity.type === "light") {
-    entity.props.off_icon = normalizeIconSource(elements.fieldOffIcon.value);
-    entity.props.on_icon = normalizeIconSource(elements.fieldOnIcon.value);
+    entity.props.icon = normalizeIconSource(elements.fieldLightIcon.value);
   }
   entity.props.width = clampNumber(
     elements.fieldWidth.value,

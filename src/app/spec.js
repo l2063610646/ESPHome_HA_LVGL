@@ -1,8 +1,13 @@
 import {
   BOARD_CONFIGS,
   DEFAULT_HEIGHT,
+  LIGHT_DEFAULT_ICON_SIZE,
   DEFAULT_LIGHT_HEIGHT,
   DEFAULT_LIGHT_WIDTH,
+  LIGHT_LABEL_HEIGHT,
+  LIGHT_LABEL_MIN_WIDTH,
+  LIGHT_PAD_ALL,
+  LIGHT_PAD_ROW,
   DEFAULT_THERMO_HEIGHT,
   DEFAULT_THERMO_WIDTH,
   DEFAULT_WIDTH,
@@ -127,11 +132,8 @@ export function generateSpecYaml(state) {
       }
     }
     if (entity.type === "light") {
-      if (normalizeIconSource(entity.props.off_icon)) {
-        lines.push(`      off_icon: ${quoteYaml(entity.props.off_icon)}`);
-      }
-      if (normalizeIconSource(entity.props.on_icon)) {
-        lines.push(`      on_icon: ${quoteYaml(entity.props.on_icon)}`);
+      if (normalizeIconSource(entity.props.icon)) {
+        lines.push(`      icon: ${quoteYaml(entity.props.icon)}`);
       }
     }
   });
@@ -308,11 +310,8 @@ export function normalizeEntity(entity, canvasWidth = BOARD_CONFIGS.nextion_35.w
       hum_icon: normalizeIconSource(
         props.hum_icon || props.humidity_icon || props.hum_image || THERMO_ICON_PATHS.hum
       ),
-      off_icon: normalizeIconSource(
-        props.off_icon || props.off_image || props.icon_off || LIGHT_ICON_PATHS.off
-      ),
-      on_icon: normalizeIconSource(
-        props.on_icon || props.on_image || props.icon_on || LIGHT_ICON_PATHS.on
+      icon: normalizeIconSource(
+        props.icon || props.icon_image || props.on_icon || props.on_image || props.off_icon || props.off_image || props.icon_on || props.icon_off || LIGHT_ICON_PATHS.on
       ),
     },
   };
@@ -413,7 +412,7 @@ export function minWidthForType(type) {
     return 180;
   }
   if (type === "light") {
-    return 150;
+    return Math.max(LIGHT_DEFAULT_ICON_SIZE, LIGHT_LABEL_MIN_WIDTH) + LIGHT_PAD_ALL * 2;
   }
   return 150;
 }
@@ -423,7 +422,7 @@ export function minHeightForType(type, style = SWITCH_STYLE_TOGGLE) {
     return DEFAULT_THERMO_HEIGHT;
   }
   if (type === "light") {
-    return DEFAULT_LIGHT_HEIGHT;
+    return LIGHT_DEFAULT_ICON_SIZE + LIGHT_LABEL_HEIGHT + LIGHT_PAD_ALL * 2 + LIGHT_PAD_ROW;
   }
   return style === SWITCH_STYLE_BUTTON ? SWITCH_BUTTON_STYLE_HEIGHT : 56;
 }
@@ -488,9 +487,6 @@ export function normalizeIconSource(value) {
   }
   if (normalized === "hum.png" || normalized === "./hum.png") {
     return THERMO_ICON_PATHS.hum;
-  }
-  if (normalized === "off.png" || normalized === "./off.png") {
-    return LIGHT_ICON_PATHS.off;
   }
   if (normalized === "light.png" || normalized === "./light.png" || normalized === "on.png" || normalized === "./on.png") {
     return LIGHT_ICON_PATHS.on;

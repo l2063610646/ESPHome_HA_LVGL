@@ -95,8 +95,8 @@ function getThermoImageId(entity, kind) {
   return `${kind}_${getEntitySlug(entity)}_icon`;
 }
 
-function getLightImageId(entity, kind) {
-  return `${kind}_${getEntitySlug(entity)}_icon`;
+function getLightImageId(entity) {
+  return `light_${getEntitySlug(entity)}_icon`;
 }
 
 function getLightStateLabelId(entity) {
@@ -461,16 +461,10 @@ function renderImageBlock(entities) {
       }
 
       return [
-        `- file: ${quoteYaml(entity.props.off_icon || LIGHT_ICON_PATHS.off)}
-  id: ${getLightImageId(entity, "off")}
+        `- file: ${quoteYaml(entity.props.icon || LIGHT_ICON_PATHS.on)}
+  id: ${getLightImageId(entity)}
   type: rgb565
-  transparency: alpha_channel
-  resize: 32x32`,
-        `- file: ${quoteYaml(entity.props.on_icon || LIGHT_ICON_PATHS.on)}
-  id: ${getLightImageId(entity, "on")}
-  type: rgb565
-  transparency: alpha_channel
-  resize: 32x32`,
+  transparency: alpha_channel`,
       ];
     })
     .join("\n");
@@ -519,10 +513,6 @@ function renderLightStateTextSensorComponent(entity) {
         id: ${getWidgetId(entity, 0)}
         state:
           checked: !lambda return x == "on";
-    - lvgl.image.update:
-        id: ${getLightImageId(entity, "state")}
-        src: !lambda |-
-          return x == "on" ? id(${getLightImageId(entity, "on")}) : id(${getLightImageId(entity, "off")});
     - lvgl.label.update:
         id: ${getLightStateLabelId(entity)}
         text: !lambda |-
@@ -719,91 +709,66 @@ function renderThermoHygrometerWidget(entity) {
 }
 
 function renderLightWidget(entity) {
-  return `- obj:
-    id: ${getContainerId(entity)}
+  return `- button:
+    id: ${getWidgetId(entity, 0)}
     x: ${entity.props.x}
     y: ${entity.props.y}
     width: ${entity.props.width}
     height: ${entity.props.height}
     radius: 14
-    border_width: 1
-    border_color: 0xD7DDD9
-    pad_all: 0
+    checkable: true
+    layout:
+      type: FLEX
+      flex_flow: COLUMN
+      flex_align_main: CENTER
+      flex_align_cross: CENTER
+      flex_align_track: CENTER
+      pad_row: 2
+    pad_all: 5
+    border_width: 0
     bg_opa: COVER
-    bg_color: 0xF8FBF9
-    shadow_width: 4
-    shadow_color: 0x1F2933
-    shadow_opa: 6%
+    bg_color: 0x989898
+    transform_pivot_x: ${Math.floor(entity.props.width / 2)}
+    transform_pivot_y: ${Math.floor(entity.props.height / 2)}
+    checked:
+      bg_color: 0xEF920C
+    pressed:
+      transform_zoom: 1.1
+    shadow_width: 0
     scrollbar_mode: "OFF"
+    state:
+      checked: !lambda return id(${getHaTextSensorId(entity, 0)}).state == "on";
+    on_change:
+      then:
+        - lvgl.label.update:
+            id: ${getLightStateLabelId(entity)}
+            text: !lambda |-
+              static std::string value;
+              value = x ? "ON" : "OFF";
+              return value.c_str();
+        - if:
+            condition:
+              lambda: return x;
+            then:
+              - homeassistant.service:
+                  service: light.turn_on
+                  data:
+                    entity_id: ${quoteYaml(entity.entityids[0])}
+            else:
+              - homeassistant.service:
+                  service: light.turn_off
+                  data:
+                    entity_id: ${quoteYaml(entity.entityids[0])}
     widgets:
-      - obj:
-          align: CENTER
-          width: 80
-          height: 90
-          radius: 0
-          border_width: 0
-          pad_all: 0
+      - image:
+          src: ${getLightImageId(entity)}
           bg_opa: TRANSP
-          shadow_width: 0
-          scrollbar_mode: "OFF"
-          widgets:
-            - image:
-                id: ${getLightImageId(entity, "state")}
-                align: TOP_MID
-                src: !lambda |-
-                  return id(${getHaTextSensorId(entity, 0)}).state == "on"
-                    ? id(${getLightImageId(entity, "on")})
-                    : id(${getLightImageId(entity, "off")});
-            - button:
-                id: ${getWidgetId(entity, 0)}
-                align: BOTTOM_MID
-                width: 80
-                height: 30
-                checkable: true
-                radius: 12
-                pad_all: 0
-                border_width: 1
-                border_color: 0xD7DDD9
-                bg_opa: COVER
-                bg_color: 0xEEF3F0
-                checked:
-                  bg_color: 0xFFE3A1
-                shadow_width: 0
-                state:
-                  checked: !lambda return id(${getHaTextSensorId(entity, 0)}).state == "on";
-                widgets:
-                  - label:
-                      id: ${getLightStateLabelId(entity)}
-                      align: CENTER
-                      text_font: ${UI_FONT_BODY}
-                      text: !lambda |-
-                        static std::string value;
-                        value = id(${getHaTextSensorId(entity, 0)}).state == "on" ? "ON" : "OFF";
-                        return value.c_str();
-                      text_color: 0x24323A
-                on_change:
-                  then:
-                    - lvgl.image.update:
-                        id: ${getLightImageId(entity, "state")}
-                        src: !lambda |-
-                          return x ? id(${getLightImageId(entity, "on")}) : id(${getLightImageId(entity, "off")});
-                    - lvgl.label.update:
-                        id: ${getLightStateLabelId(entity)}
-                        text: !lambda |-
-                          static std::string value;
-                          value = x ? "ON" : "OFF";
-                          return value.c_str();
-                    - if:
-                        condition:
-                          lambda: return x;
-                        then:
-                          - homeassistant.service:
-                              service: light.turn_on
-                              data:
-                                entity_id: ${quoteYaml(entity.entityids[0])}
-                        else:
-                          - homeassistant.service:
-                              service: light.turn_off
-                              data:
-                                entity_id: ${quoteYaml(entity.entityids[0])}`;
+      - label:
+          id: ${getLightStateLabelId(entity)}
+          text_font: ${UI_FONT_BODY}
+          text: !lambda |-
+            static std::string value;
+            value = id(${getHaTextSensorId(entity, 0)}).state == "on" ? "ON" : "OFF";
+            return value.c_str();
+          text_color: 0xFFFFFF`;
 }

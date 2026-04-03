@@ -454,40 +454,44 @@ textarea {
 
 .light-widget-group {
   position: absolute;
-  left: 50%;
-  top: 50%;
-  width: 80px;
-  height: 90px;
-  transform: translate(-50%, -50%);
-  display: grid;
-  grid-template-rows: 1fr auto;
-  justify-items: center;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
   align-items: center;
+  gap: 2px;
+  padding: 5px;
+  border-radius: 14px;
+  background: #989898;
+  transform-origin: center;
+  transition: transform 120ms ease;
+}
+
+.light-widget-group.off {
+  background: #989898;
+}
+
+.light-widget-group.on {
+  background: #ef920c;
 }
 
 .light-widget-icon {
-  width: 36px;
-  height: 36px;
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: calc(100% - 16px);
   object-fit: contain;
 }
 
-.light-action-button {
-  width: 80px;
-  height: 30px;
-  padding: 0 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 12px;
-  border: 1px solid #b9c9c2;
-  background: #eef3f0;
+.canvas-widget:active .light-widget-group {
+  transform: scale(1.1);
 }
 
 .light-action-label {
   font-size: var(--preview-font-body-size);
   font-weight: 500;
   letter-spacing: 0;
-  color: #24323a;
+  color: #ffffff;
 }
 
 .widget-bounds {
