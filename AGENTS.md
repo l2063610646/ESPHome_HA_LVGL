@@ -36,9 +36,9 @@ The old Python build pipeline is not part of the normal workflow anymore.
   Board metadata, widget constants, and entity capability definitions.
 - `assets/css/styles.css`
   App styling and preview styling.
-- `assets/images/temp.png`
+- `mdi:thermometer`
   Example default temperature icon.
-- `assets/images/hum.png`
+- `https://l2063610646.github.io/tools/humi.png`
   Example default humidity icon.
 
 ## Current Data Model

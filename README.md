@@ -30,9 +30,9 @@ Future AI collaborators should read `AGENTS.md` first.
   Board metadata, widget constants, and entity capability definitions.
 - `assets/css/styles.css`
   Editor UI and preview styling.
-- `assets/images/temp.png`
+- `mdi:thermometer`
   Default temperature icon example.
-- `assets/images/hum.png`
+- `https://l2063610646.github.io/tools/humi.png`
   Default humidity icon example.
 
 ## Current Data Model
@@ -87,8 +87,8 @@ entities:
     type: thermo_hygrometer
     props:
       style: "compact"
-      temp_icon: "assets/images/temp.png"
-      hum_icon: "assets/images/hum.png"
+      temp_icon: "mdi:thermometer"
+      hum_icon: "https://l2063610646.github.io/tools/humi.png"
       x: 24
       y: 130
       width: 220

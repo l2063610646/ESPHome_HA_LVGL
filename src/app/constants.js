@@ -25,8 +25,8 @@ export const DEFAULT_THERMO_WIDTH = 220;
 export const DEFAULT_THERMO_HEIGHT = 112;
 export const THERMO_VALUE_BOX_HEIGHT = 80;
 export const THERMO_ICON_PATHS = {
-  temp: "assets/images/temp.png",
-  hum: "assets/images/hum.png",
+  temp: "mdi:thermometer",
+  hum: "https://l2063610646.github.io/tools/humi.png",
 };
 export const DEFAULT_BUTTON_BG_COLOR = "0xEEF3F0";
 export const SWITCH_WIDTH = 54;
