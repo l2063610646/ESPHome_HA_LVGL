@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ESPHome UI Spec Editor</title>
+    <link rel="stylesheet" href="./assets/css/styles.css" />
+  </head>
+  <body>
+    <div class="shell">
+      <aside class="sidebar">
+        <div class="brand">
+          <p class="eyebrow">Drag Config Editor</p>
+          <h1>ESPHome UI Builder</h1>
+          <p class="lede">
+            Edit the compact UI spec visually and generate final ESPHome YAML locally
+            in the browser. Keep UI work here, not in device driver code.
+          </p>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <h2>Board</h2>
+          </div>
+          <label class="stack">
+            <span>Model & Resolution</span>
+            <select id="board-select">
+              <option value="nextion_35">ONX3248G035 (480x320)</option>
+              <option value="nextion_28">ONX2432G028 (240x320)</option>
+            </select>
+          </label>
+          <label class="stack">
+            <span>Rotation</span>
+            <select id="rotation-select">
+              <option value="0">0° (Default)</option>
+              <option value="90">90°</option>
+              <option value="180">180°</option>
+              <option value="270">270°</option>
+            </select>
+          </label>
+          <label class="stack">
+            <span>Screen Background</span>
+            <input id="screen-bg-color" type="color" value="#f3efe7" />
+          </label>
+          <div id="screen-palette" class="palette-grid" aria-label="Background color palette">
+            <button type="button" class="palette-swatch" data-color="#f3efe7" style="--swatch:#f3efe7"></button>
+            <button type="button" class="palette-swatch" data-color="#f8fbf9" style="--swatch:#f8fbf9"></button>
+            <button type="button" class="palette-swatch" data-color="#e8f0ec" style="--swatch:#e8f0ec"></button>
+            <button type="button" class="palette-swatch" data-color="#dfe8f3" style="--swatch:#dfe8f3"></button>
+            <button type="button" class="palette-swatch" data-color="#1f2933" style="--swatch:#1f2933"></button>
+            <button type="button" class="palette-swatch" data-color="#0f1720" style="--swatch:#0f1720"></button>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <h2>Wi-Fi</h2>
+          </div>
+          <label class="stack">
+            <span>Device Name</span>
+            <input id="device-name" type="text" placeholder="device-name" />
+            <p id="device-name-help" class="field-help" aria-live="polite"></p>
+          </label>
+          <label class="stack">
+            <span>Friendly Name</span>
+            <input id="friendly-name" type="text" placeholder="Optional, defaults to DEVICE_NAME" />
+          </label>
+          <label class="stack">
+            <span>SSID</span>
+            <input id="wifi-ssid" type="text" placeholder="Wi-Fi SSID" />
+          </label>
+          <label class="stack">
+            <span>Password</span>
+            <input id="wifi-password" type="text" placeholder="Wi-Fi Password" />
+          </label>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <h2>Entities</h2>
+            <div class="panel-actions">
+              <button id="add-entity-btn" type="button">Add Entity</button>
+            </div>
+          </div>
+          <div id="entity-list" class="entity-list"></div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <h2>Import / Export</h2>
+          </div>
+          <label class="stack">
+            <span>Spec YAML</span>
+            <textarea id="yaml-io" rows="12" spellcheck="false"></textarea>
+          </label>
+          <div class="button-row">
+            <button id="load-yaml-btn" type="button">Load YAML</button>
+            <button id="copy-yaml-btn" type="button">Copy YAML</button>
+            <button id="download-yaml-btn" type="button">Download</button>
+          </div>
+          <p class="hint">
+            Supports the current spec shape: <code>entities[].entityid/type/props</code>.
+          </p>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <h2>Build</h2>
+          </div>
+          <div class="button-row">
+            <button id="build-final-btn" type="button">Generate</button>
+            <button id="download-final-btn" type="button">Download</button>
+            <button id="copy-final-btn" type="button">Copy</button>
+          </div>
+          <label class="stack">
+            <span>Final ESPHome YAML</span>
+            <textarea id="final-yaml-io" rows="12" spellcheck="false" readonly></textarea>
+          </label>
+          <p id="build-status" class="hint">Not generated yet.</p>
+        </div>
+      </aside>
+
+      <main class="workspace">
+        <section class="canvas-panel">
+          <div class="canvas-head">
+            <div>
+              <p class="eyebrow">Preview</p>
+              <h2 id="canvas-res-title">480 x 320 Canvas</h2>
+            </div>
+            <p id="status" class="status">Ready</p>
+          </div>
+          <div class="canvas-wrap">
+            <div id="canvas" class="canvas" aria-label="UI preview canvas"></div>
+          </div>
+          <p class="hint">
+            Drag the widget body to move it. Drag the bottom-right handle to resize width and height.
+          </p>
+        </section>
+
+        <section class="inspector-panel">
+          <div class="panel-head">
+            <h2>Inspector</h2>
+          </div>
+          <div id="empty-state" class="empty-state">
+            Select a widget on the canvas or from the list.
+          </div>
+          <form id="inspector-form" class="inspector hidden">
+            <label class="stack">
+              <span>Type</span>
+              <select id="field-type">
+                <option value="switch">switch</option>
+                <option value="dual_switch">dual_switch</option>
+                <option value="thermo_hygrometer">thermo_hygrometer</option>
+              </select>
+            </label>
+            <label class="stack">
+              <span id="field-entityid-label">Entity ID</span>
+              <input id="field-entityid" type="text" />
+            </label>
+            <div id="dual-fields" class="hidden">
+              <label class="stack">
+                <span id="field-entityid-2-label">Entity ID 2</span>
+                <input id="field-entityid-2" type="text" />
+              </label>
+            </div>
+            <label class="stack">
+              <span>Title</span>
+              <input id="field-title" type="text" />
+            </label>
+            <div id="switch-style-fields">
+              <label class="stack">
+                <span>Style</span>
+                <select id="field-style">
+                  <option value="toggle">toggle</option>
+                  <option value="button">button</option>
+                  <option value="stacked">stacked</option>
+                  <option value="columns">columns</option>
+                </select>
+              </label>
+            </div>
+            <div id="thermo-icon-fields" class="hidden">
+              <label class="stack">
+                <span>Temp Icon</span>
+                <input id="field-temp-icon" type="text" placeholder="assets/images/temp.png / /abs/temp.png / https://... / mdi:thermometer" />
+              </label>
+              <label class="stack">
+                <span>Humi Icon</span>
+                <input id="field-hum-icon" type="text" placeholder="assets/images/hum.png / /abs/hum.png / https://... / mdi:water-percent" />
+              </label>
+              <div class="icon-preview-grid">
+                <div class="icon-preview-card">
+                  <span class="icon-preview-label">Temp Preview</span>
+                  <div class="icon-preview-box">
+                    <img id="temp-icon-preview-img" class="icon-preview-image" alt="Temp icon preview" />
+                    <span id="temp-icon-preview-fallback" class="icon-preview-fallback hidden">No Preview</span>
+                  </div>
+                </div>
+                <div class="icon-preview-card">
+                  <span class="icon-preview-label">Humi Preview</span>
+                  <div class="icon-preview-box">
+                    <img id="hum-icon-preview-img" class="icon-preview-image" alt="Humidity icon preview" />
+                    <span id="hum-icon-preview-fallback" class="icon-preview-fallback hidden">No Preview</span>
+                  </div>
+                </div>
+              </div>
+              <p class="hint">
+                Supports relative or absolute local paths, <code>http/https</code> URLs, and <code>mdi:icon-name</code>. Generated YAML still uses ESPHome <code>image:</code>, not <code>online_image</code>.
+              </p>
+            </div>
+            <div class="grid two">
+              <label class="stack">
+                <span>X</span>
+                <input id="field-x" type="number" />
+              </label>
+              <label class="stack">
+                <span>Y</span>
+                <input id="field-y" type="number" />
+              </label>
+            </div>
+            <div class="grid two">
+              <label class="stack">
+                <span>Width</span>
+                <input id="field-width" type="number" />
+              </label>
+              <label class="stack">
+                <span>Height</span>
+                <input id="field-height" type="number" />
+              </label>
+            </div>
+            <div class="button-row">
+              <button id="duplicate-btn" type="button">Duplicate</button>
+              <button id="delete-btn" type="button" class="danger">Delete</button>
+            </div>
+          </form>
+        </section>
+      </main>
+    </div>
+
+    <template id="entity-item-template">
+      <button class="entity-item" type="button"></button>
+    </template>
+
+    <script type="module" src="./src/app.js"></script>
+  </body>
+</html>

@@ -1,0 +1,846 @@
+import { DEFAULT_BUTTON_BG_COLOR, THERMO_ICON_PATHS } from "./constants.js";
+import {
+  getEffectiveFriendlyName,
+  normalizeEntities,
+  normalizeOptionalColor,
+  quoteYaml,
+} from "./spec.js";
+
+export function renderCombinedYaml(state) {
+  const entities = normalizeEntities(state.entities, state.canvasWidth, state.canvasHeight);
+  const header = [
+    "# This file is auto-generated.",
+    `# Base config: ${state.board}.yaml`,
+    "# UI config: browser editor",
+    "# This is a full ESPHome config assembled locally in the browser.",
+  ];
+
+  const body = [
+    renderBaseConfigYaml(state).trimEnd(),
+    `  bg_color: ${state.screenBgColor}`,
+    "  widgets:",
+    indentLines(renderWidgetBlock(entities) || "    []", 0),
+    "",
+    "switch:",
+    indentLines(renderSwitchBlock(entities) || "[]", 2),
+    "",
+    "text_sensor:",
+    indentLines(renderTextSensorBlock(entities) || "[]", 2),
+    "",
+    "image:",
+    indentLines(renderImageBlock(entities) || "[]", 2),
+    "",
+  ];
+  return `${header.join("\n")}\n${body.join("\n")}`;
+}
+
+function indentLines(text, spaces) {
+  const prefix = " ".repeat(spaces);
+  return String(text)
+    .split("\n")
+    .map((line) => (line ? `${prefix}${line}` : line))
+    .join("\n");
+}
+
+function sanitizeId(value) {
+  let slug = String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9_]+/g, "_")
+    .replace(/_+/g, "_")
+    .replace(/^_+|_+$/g, "");
+  if (!slug) {
+    throw new Error("Entity ID produced an empty sanitized ID");
+  }
+  if (/^\d/.test(slug)) {
+    slug = `entity_${slug}`;
+  }
+  return slug;
+}
+
+function getEntitySlug(entity) {
+  return sanitizeId([entity.type, ...entity.entityids].join("_"));
+}
+
+function getContainerId(entity) {
+  return `card_${getEntitySlug(entity)}`;
+}
+
+function getHaSwitchId(entity, index) {
+  return `ha_${getEntitySlug(entity)}_${index + 1}`;
+}
+
+function getHaTextSensorId(entity, index) {
+  return `ha_text_${getEntitySlug(entity)}_${index + 1}`;
+}
+
+function getWidgetId(entity, index) {
+  return `widget_${getEntitySlug(entity)}_${index + 1}`;
+}
+
+function getValueLabelId(entity, index) {
+  return `label_${getEntitySlug(entity)}_${index + 1}`;
+}
+
+function getThermoImageId(entity, kind) {
+  return `${kind}_${getEntitySlug(entity)}_icon`;
+}
+
+function getChannelLabel(index) {
+  return `CH${index + 1}`;
+}
+
+function getMetricCaption(index) {
+  return index === 0 ? "Temp" : "Humi";
+}
+
+function getMetricSuffix(index) {
+  return index === 0 ? "°C" : "%";
+}
+
+function buttonInactiveBgColor(entity) {
+  return normalizeOptionalColor(entity.props.inactive_bg_color) || DEFAULT_BUTTON_BG_COLOR;
+}
+
+function buttonActiveBgColor(entity) {
+  return normalizeOptionalColor(entity.props.active_bg_color) || "0xD7E9DD";
+}
+
+function getBoardTransform(model, rotation) {
+  const mappings = {
+    st7796: {
+      0: { width: 320, height: 480, dSwap: false, dMirX: true, dMirY: false, tSwap: false, tMirX: false, tMirY: false },
+      90: { width: 480, height: 320, dSwap: true, dMirX: false, dMirY: false, tSwap: true, tMirX: false, tMirY: true },
+      180: { width: 320, height: 480, dSwap: false, dMirX: false, dMirY: true, tSwap: false, tMirX: true, tMirY: true },
+      270: { width: 480, height: 320, dSwap: true, dMirX: true, dMirY: true, tSwap: true, tMirX: true, tMirY: false },
+    },
+    st7789v: {
+      0: { width: 240, height: 320, dSwap: false, dMirX: false, dMirY: false, tSwap: false, tMirX: false, tMirY: false },
+      90: { width: 320, height: 240, dSwap: true, dMirX: true, dMirY: false, tSwap: true, tMirX: false, tMirY: true },
+      180: { width: 240, height: 320, dSwap: false, dMirX: true, dMirY: true, tSwap: false, tMirX: true, tMirY: true },
+      270: { width: 320, height: 240, dSwap: true, dMirX: false, dMirY: true, tSwap: true, tMirX: true, tMirY: false },
+    },
+  };
+  return mappings[model]?.[rotation] || mappings[model]?.[0];
+}
+
+function renderBaseConfigYaml(state) {
+  const templates = {
+    nextion_35: renderNextion35Base,
+    nextion_28: renderNextion28Base,
+  };
+  const renderer = templates[state.board];
+  if (!renderer) {
+    throw new Error(`Unsupported board: ${state.board}`);
+  }
+  return renderer(state.rotation, {
+    deviceName: state.deviceName,
+    friendlyName: getEffectiveFriendlyName(state.deviceName, state.friendlyName),
+    ssid: state.wifiSsid,
+    password: state.wifiPassword,
+  });
+}
+
+function renderNextion35Base(rotation, wifi) {
+  const t = getBoardTransform("st7796", rotation);
+  return `substitutions:
+  device_name: ${quoteYaml(wifi.deviceName)}
+  friendly_name: ${quoteYaml(wifi.friendlyName)}
+  wifi_ssid: ${quoteYaml(wifi.ssid)}
+  wifi_password: ${quoteYaml(wifi.password)}
+
+esphome:
+  name: \${device_name}
+  friendly_name: \${friendly_name}
+  comment: "ESPHome config for ONX3248G035 / ESP32-S3 + ST7796U + CST826"
+  on_boot:
+    priority: 800
+    then:
+      - light.turn_on:
+          id: backlight
+          brightness: !lambda "return id(backlight_percent) / 100.0f;"
+
+external_components:
+  - source:
+      type: git
+      url: https://github.com/l2063610646/esphome-cst826-driver
+    components: [ cst826 ]
+
+esp32:
+  board: esp32-s3-devkitc-1
+  variant: esp32s3
+  framework:
+    type: esp-idf
+
+psram:
+  mode: octal
+  speed: 40MHz
+
+logger:
+
+api:
+
+ota:
+  - platform: esphome
+
+wifi:
+  ssid: \${wifi_ssid}
+  password: \${wifi_password}
+  ap:
+    ssid: "\${friendly_name} Fallback"
+
+web_server:
+  port: 80
+
+i2c:
+  sda: GPIO8
+  scl: GPIO7
+  scan: true
+  frequency: 400kHz
+
+spi:
+  clk_pin: GPIO5
+  mosi_pin: GPIO1
+
+output:
+  - platform: ledc
+    id: backlight_pwm
+    pin: GPIO6
+    frequency: 10000Hz
+
+light:
+  - platform: monochromatic
+    id: backlight
+    name: "\${friendly_name} Backlight"
+    output: backlight_pwm
+    restore_mode: ALWAYS_ON
+
+globals:
+  - id: backlight_percent
+    type: int
+    restore_value: no
+    initial_value: "50"
+
+display:
+  - platform: mipi_spi
+    id: main_display
+    model: ST7796
+    dc_pin: GPIO3
+    cs_pin: GPIO2
+    dimensions:
+      width: ${t.width}
+      height: ${t.height}
+    data_rate: 40MHz
+    color_order: bgr
+    invert_colors: false
+    auto_clear_enabled: false
+    update_interval: never
+    transform:
+      swap_xy: ${String(t.dSwap)}
+      mirror_x: ${String(t.dMirX)}
+      mirror_y: ${String(t.dMirY)}
+    init_sequence:
+      - [0x11]
+      - delay 120ms
+      - [0xF0, 0xC3]
+      - [0xF0, 0x96]
+      - [0xB4, 0x01]
+      - [0xB7, 0xC6]
+      - [0xC0, 0x80, 0x45]
+      - [0xC1, 0x13]
+      - [0xC2, 0xA7]
+      - [0xC5, 0x0A]
+      - [0xE8, 0x40, 0x8A, 0x00, 0x00, 0x29, 0x19, 0xA5, 0x33]
+      - [0xE0, 0xD0, 0x08, 0x0F, 0x06, 0x06, 0x33, 0x30, 0x33, 0x47, 0x17, 0x13, 0x13, 0x2B, 0x31]
+      - [0xE1, 0xD0, 0x0A, 0x11, 0x0B, 0x09, 0x07, 0x2F, 0x33, 0x47, 0x38, 0x15, 0x16, 0x2C, 0x32]
+      - [0xF0, 0x3C]
+      - [0xF0, 0x69]
+      - delay 120ms
+      - [0x21]
+      - [0x29]
+
+touchscreen:
+  - platform: cst826
+    id: main_touch
+    display: main_display
+    x_raw_max: ${t.width}
+    y_raw_max: ${t.height}
+    transform:
+      swap_xy: ${String(t.tSwap)}
+      mirror_x: ${String(t.tMirX)}
+      mirror_y: ${String(t.tMirY)}
+    update_interval: 50ms
+
+lvgl:
+  displays:
+    - main_display
+  touchscreens:
+    - touchscreen_id: main_touch
+      long_press_time: 300ms
+      long_press_repeat_time: 60ms`;
+}
+
+function renderNextion28Base(rotation, wifi) {
+  const t = getBoardTransform("st7789v", rotation);
+  return `substitutions:
+  device_name: ${quoteYaml(wifi.deviceName)}
+  friendly_name: ${quoteYaml(wifi.friendlyName)}
+  wifi_ssid: ${quoteYaml(wifi.ssid)}
+  wifi_password: ${quoteYaml(wifi.password)}
+
+esphome:
+  name: \${device_name}
+  friendly_name: \${friendly_name}
+  comment: "ESPHome config for ONX2432G028 / ESP32-S3 + ST7789 + CST826"
+  on_boot:
+    priority: 800
+    then:
+      - light.turn_on:
+          id: backlight
+          brightness: !lambda "return id(backlight_percent) / 100.0f;"
+
+external_components:
+  - source:
+      type: git
+      url: https://github.com/l2063610646/esphome-cst826-driver
+    components: [ cst826 ]
+
+esp32:
+  board: esp32-s3-devkitc-1
+  variant: esp32s3
+  framework:
+    type: esp-idf
+
+psram:
+  mode: octal
+  speed: 40MHz
+
+logger:
+api:
+ota:
+  - platform: esphome
+
+wifi:
+  ssid: \${wifi_ssid}
+  password: \${wifi_password}
+  ap:
+    ssid: "\${friendly_name} Fallback"
+
+web_server:
+  port: 80
+
+i2c:
+  sda: GPIO8
+  scl: GPIO7
+  scan: true
+  frequency: 400kHz
+
+spi:
+  clk_pin: GPIO5
+  mosi_pin: GPIO1
+
+pcf8574:
+  - id: lcd_exio
+    address: 0x38
+    pcf8575: false
+
+output:
+  - platform: ledc
+    id: backlight_pwm
+    pin: GPIO6
+    frequency: 5000Hz
+
+light:
+  - platform: monochromatic
+    id: backlight
+    name: "\${friendly_name} Backlight"
+    output: backlight_pwm
+    restore_mode: ALWAYS_ON
+
+globals:
+  - id: backlight_percent
+    type: int
+    restore_value: no
+    initial_value: "50"
+
+display:
+  - platform: mipi_spi
+    id: main_display
+    model: ST7789V
+    dc_pin: GPIO3
+    cs_pin: GPIO2
+    reset_pin:
+      pcf8574: lcd_exio
+      number: 5
+      mode:
+        output: true
+      inverted: false
+    dimensions:
+      width: ${t.width}
+      height: ${t.height}
+    data_rate: 40MHz
+    invert_colors: false
+    auto_clear_enabled: false
+    update_interval: never
+    transform:
+      swap_xy: ${String(t.dSwap)}
+      mirror_x: ${String(t.dMirX)}
+      mirror_y: ${String(t.dMirY)}
+
+touchscreen:
+  - platform: cst826
+    id: main_touch
+    display: main_display
+    x_raw_max: ${t.width}
+    y_raw_max: ${t.height}
+    transform:
+      swap_xy: ${String(t.tSwap)}
+      mirror_x: ${String(t.tMirX)}
+      mirror_y: ${String(t.tMirY)}
+    update_interval: 50ms
+
+lvgl:
+  displays:
+    - main_display
+  touchscreens:
+    - touchscreen_id: main_touch
+      long_press_time: 300ms
+      long_press_repeat_time: 60ms`;
+}
+
+function renderSwitchBlock(entities) {
+  return entities
+    .filter((entity) => entity.type === "switch" || entity.type === "dual_switch")
+    .flatMap((entity) => entity.entityids.map((_, index) => renderSwitchComponent(entity, index)))
+    .join("\n");
+}
+
+function renderTextSensorBlock(entities) {
+  return entities
+    .filter((entity) => entity.type === "thermo_hygrometer")
+    .flatMap((entity) => entity.entityids.map((_, index) => renderTextSensorComponent(entity, index)))
+    .join("\n");
+}
+
+function renderImageBlock(entities) {
+  return entities
+    .filter((entity) => entity.type === "thermo_hygrometer")
+    .flatMap((entity) => [
+      `- file: ${quoteYaml(entity.props.temp_icon || THERMO_ICON_PATHS.temp)}
+  id: ${getThermoImageId(entity, "temp")}
+  type: rgb565
+  transparency: alpha_channel
+  resize: 32x32`,
+      `- file: ${quoteYaml(entity.props.hum_icon || THERMO_ICON_PATHS.hum)}
+  id: ${getThermoImageId(entity, "hum")}
+  type: rgb565
+  transparency: alpha_channel
+  resize: 32x32`,
+    ])
+    .join("\n");
+}
+
+function renderWidgetBlock(entities) {
+  const widgets = entities.map((entity) => renderWidget(entity)).join("\n");
+  return widgets ? indentLines(widgets, 4) : "";
+}
+
+function renderSwitchComponent(entity, index) {
+  return `- platform: homeassistant
+  id: ${getHaSwitchId(entity, index)}
+  entity_id: ${quoteYaml(entity.entityids[index])}
+  on_turn_on:
+    - lvgl.widget.update:
+        id: ${getWidgetId(entity, index)}
+        state:
+          checked: true
+  on_turn_off:
+    - lvgl.widget.update:
+        id: ${getWidgetId(entity, index)}
+        state:
+          checked: false`;
+}
+
+function renderTextSensorComponent(entity, index) {
+  return `- platform: homeassistant
+  id: ${getHaTextSensorId(entity, index)}
+  entity_id: ${quoteYaml(entity.entityids[index])}
+  on_value:
+    - lvgl.label.update:
+        id: ${getValueLabelId(entity, index)}
+        text: !lambda |-
+          static std::string value;
+          value = "${getMetricCaption(index)}: " + x + "${getMetricSuffix(index)}";
+          return value.c_str();`;
+}
+
+function renderWidget(entity) {
+  if (entity.type === "switch") {
+    return entity.props.style === "button"
+      ? renderSingleSwitchButtonWidget(entity)
+      : renderSingleSwitchToggleWidget(entity);
+  }
+  if (entity.type === "dual_switch") {
+    return entity.props.style === "columns"
+      ? renderDualSwitchColumnsWidget(entity)
+      : renderDualSwitchStackedWidget(entity);
+  }
+  return renderThermoHygrometerWidget(entity);
+}
+
+function renderSingleSwitchToggleWidget(entity) {
+  return `- obj:
+    id: ${getContainerId(entity)}
+    x: ${entity.props.x}
+    y: ${entity.props.y}
+    width: ${entity.props.width}
+    height: ${entity.props.height}
+    radius: 14
+    border_width: 1
+    border_color: 0xD7DDD9
+    pad_all: 0
+    bg_opa: COVER
+    bg_color: 0xF8FBF9
+    shadow_width: 4
+    shadow_color: 0x1F2933
+    shadow_opa: 6%
+    scrollbar_mode: "OFF"
+    widgets:
+      - label:
+          align: LEFT_MID
+          x: 16
+          text: ${quoteYaml(entity.props.title)}
+      - switch:
+          id: ${getWidgetId(entity, 0)}
+          align: RIGHT_MID
+          x: -16
+          state:
+            checked: !lambda return id(${getHaSwitchId(entity, 0)}).state;
+          on_change:
+            then:
+              - if:
+                  condition:
+                    lambda: return x;
+                  then:
+                    - switch.turn_on: ${getHaSwitchId(entity, 0)}
+                  else:
+                    - switch.turn_off: ${getHaSwitchId(entity, 0)}`;
+}
+
+function renderSingleSwitchButtonWidget(entity) {
+  const buttonWidth = Math.max(entity.props.width - 32, 96);
+  return `- obj:
+    id: ${getContainerId(entity)}
+    x: ${entity.props.x}
+    y: ${entity.props.y}
+    width: ${entity.props.width}
+    height: ${entity.props.height}
+    radius: 14
+    border_width: 1
+    border_color: 0xD7DDD9
+    pad_all: 0
+    bg_opa: COVER
+    bg_color: 0xF8FBF9
+    shadow_width: 4
+    shadow_color: 0x1F2933
+    shadow_opa: 6%
+    scrollbar_mode: "OFF"
+    widgets:
+      - label:
+          align: TOP_LEFT
+          x: 16
+          y: 12
+          text: ${quoteYaml(entity.props.title)}
+      - button:
+          id: ${getWidgetId(entity, 0)}
+          align: BOTTOM_MID
+          y: -12
+          width: ${buttonWidth}
+          height: 40
+          checkable: true
+          radius: 12
+          pad_all: 0
+          border_width: 1
+          border_color: 0xB9C9C2
+          bg_opa: COVER
+          bg_color: ${buttonInactiveBgColor(entity)}
+          checked:
+            bg_color: ${buttonActiveBgColor(entity)}
+          shadow_width: 0
+          state:
+            checked: !lambda return id(${getHaSwitchId(entity, 0)}).state;
+          widgets:
+            - label:
+                align: CENTER
+                text: "Toggle"
+                text_color: 0x24323A
+          on_change:
+            then:
+              - if:
+                  condition:
+                    lambda: return x;
+                  then:
+                    - switch.turn_on: ${getHaSwitchId(entity, 0)}
+                  else:
+                    - switch.turn_off: ${getHaSwitchId(entity, 0)}`;
+}
+
+function renderDualSwitchStackedWidget(entity) {
+  return `- obj:
+    id: ${getContainerId(entity)}
+    x: ${entity.props.x}
+    y: ${entity.props.y}
+    width: ${entity.props.width}
+    height: ${entity.props.height}
+    radius: 14
+    border_width: 1
+    border_color: 0xD7DDD9
+    pad_all: 0
+    bg_opa: COVER
+    bg_color: 0xF8FBF9
+    shadow_width: 4
+    shadow_color: 0x1F2933
+    shadow_opa: 6%
+    scrollbar_mode: "OFF"
+    widgets:
+      - label:
+          align: LEFT_MID
+          x: 16
+          text: ${quoteYaml(entity.props.title)}
+      - obj:
+          align: RIGHT_MID
+          x: -16
+          width: 96
+          height: 94
+          radius: 0
+          border_width: 0
+          pad_all: 0
+          bg_opa: TRANSP
+          scrollbar_mode: "OFF"
+          widgets:
+            - button:
+                id: ${getWidgetId(entity, 0)}
+                align: TOP_MID
+                width: 96
+                height: 42
+                checkable: true
+                radius: 10
+                pad_all: 0
+                border_width: 1
+                border_color: 0xB9C9C2
+                bg_opa: COVER
+                bg_color: ${buttonInactiveBgColor(entity)}
+                checked:
+                  bg_color: ${buttonActiveBgColor(entity)}
+                shadow_width: 0
+                state:
+                  checked: !lambda return id(${getHaSwitchId(entity, 0)}).state;
+                widgets:
+                  - label:
+                      align: CENTER
+                      text: "${getChannelLabel(0)}"
+                      text_color: 0x24323A
+                on_change:
+                  then:
+                    - if:
+                        condition:
+                          lambda: return x;
+                        then:
+                          - switch.turn_on: ${getHaSwitchId(entity, 0)}
+                        else:
+                          - switch.turn_off: ${getHaSwitchId(entity, 0)}
+            - button:
+                id: ${getWidgetId(entity, 1)}
+                align: BOTTOM_MID
+                width: 96
+                height: 42
+                checkable: true
+                radius: 10
+                pad_all: 0
+                border_width: 1
+                border_color: 0xB9C9C2
+                bg_opa: COVER
+                bg_color: ${buttonInactiveBgColor(entity)}
+                checked:
+                  bg_color: ${buttonActiveBgColor(entity)}
+                shadow_width: 0
+                state:
+                  checked: !lambda return id(${getHaSwitchId(entity, 1)}).state;
+                widgets:
+                  - label:
+                      align: CENTER
+                      text: "${getChannelLabel(1)}"
+                      text_color: 0x24323A
+                on_change:
+                  then:
+                    - if:
+                        condition:
+                          lambda: return x;
+                        then:
+                          - switch.turn_on: ${getHaSwitchId(entity, 1)}
+                        else:
+                          - switch.turn_off: ${getHaSwitchId(entity, 1)}`;
+}
+
+function renderDualSwitchColumnsWidget(entity) {
+  const buttonWidth = Math.max(Math.floor((entity.props.width - 44) / 2), 96);
+  return `- obj:
+    id: ${getContainerId(entity)}
+    x: ${entity.props.x}
+    y: ${entity.props.y}
+    width: ${entity.props.width}
+    height: ${entity.props.height}
+    radius: 14
+    border_width: 1
+    border_color: 0xD7DDD9
+    pad_all: 0
+    bg_opa: COVER
+    bg_color: 0xF8FBF9
+    shadow_width: 4
+    shadow_color: 0x1F2933
+    shadow_opa: 6%
+    scrollbar_mode: "OFF"
+    widgets:
+      - label:
+          align: TOP_LEFT
+          x: 16
+          y: 12
+          text: ${quoteYaml(entity.props.title)}
+      - button:
+          id: ${getWidgetId(entity, 0)}
+          align: BOTTOM_LEFT
+          x: 16
+          y: -12
+          width: ${buttonWidth}
+          height: 40
+          checkable: true
+          radius: 12
+          pad_all: 0
+          border_width: 1
+          border_color: 0xB9C9C2
+          bg_opa: COVER
+          bg_color: ${buttonInactiveBgColor(entity)}
+          checked:
+            bg_color: ${buttonActiveBgColor(entity)}
+          shadow_width: 0
+          state:
+            checked: !lambda return id(${getHaSwitchId(entity, 0)}).state;
+          widgets:
+            - label:
+                align: CENTER
+                text: "${getChannelLabel(0)}"
+                text_color: 0x24323A
+          on_change:
+            then:
+              - if:
+                  condition:
+                    lambda: return x;
+                  then:
+                    - switch.turn_on: ${getHaSwitchId(entity, 0)}
+                  else:
+                    - switch.turn_off: ${getHaSwitchId(entity, 0)}
+      - button:
+          id: ${getWidgetId(entity, 1)}
+          align: BOTTOM_RIGHT
+          x: -16
+          y: -12
+          width: ${buttonWidth}
+          height: 40
+          checkable: true
+          radius: 12
+          pad_all: 0
+          border_width: 1
+          border_color: 0xB9C9C2
+          bg_opa: COVER
+          bg_color: ${buttonInactiveBgColor(entity)}
+          checked:
+            bg_color: ${buttonActiveBgColor(entity)}
+          shadow_width: 0
+          state:
+            checked: !lambda return id(${getHaSwitchId(entity, 1)}).state;
+          widgets:
+            - label:
+                align: CENTER
+                text: "${getChannelLabel(1)}"
+                text_color: 0x24323A
+          on_change:
+            then:
+              - if:
+                  condition:
+                    lambda: return x;
+                  then:
+                    - switch.turn_on: ${getHaSwitchId(entity, 1)}
+                  else:
+                    - switch.turn_off: ${getHaSwitchId(entity, 1)}`;
+}
+
+function renderThermoHygrometerWidget(entity) {
+  const valueBoxWidth = Math.max(Math.floor((entity.props.width - 44) / 2), 84);
+  return `- obj:
+    id: ${getContainerId(entity)}
+    x: ${entity.props.x}
+    y: ${entity.props.y}
+    width: ${entity.props.width}
+    height: ${entity.props.height}
+    radius: 14
+    border_width: 1
+    border_color: 0xD7DDD9
+    pad_all: 0
+    bg_opa: COVER
+    bg_color: 0xF8FBF9
+    shadow_width: 4
+    shadow_color: 0x1F2933
+    shadow_opa: 6%
+    scrollbar_mode: "OFF"
+    widgets:
+      - obj:
+          align: LEFT_MID
+          x: 16
+          width: ${valueBoxWidth}
+          height: 80
+          radius: 12
+          border_width: 1
+          border_color: 0xD7DDD9
+          pad_top: 10
+          pad_bottom: 10
+          pad_left: 8
+          pad_right: 8
+          bg_opa: COVER
+          bg_color: 0xEEF3F0
+          shadow_width: 0
+          scrollbar_mode: "OFF"
+          widgets:
+            - image:
+                align: TOP_MID
+                src: ${getThermoImageId(entity, "temp")}
+            - label:
+                id: ${getValueLabelId(entity, 0)}
+                align: BOTTOM_MID
+                text: "${getMetricCaption(0)}: --${getMetricSuffix(0)}"
+                text_color: 0x24323A
+      - obj:
+          align: RIGHT_MID
+          x: -16
+          width: ${valueBoxWidth}
+          height: 80
+          radius: 12
+          border_width: 1
+          border_color: 0xD7DDD9
+          pad_top: 10
+          pad_bottom: 10
+          pad_left: 8
+          pad_right: 8
+          bg_opa: COVER
+          bg_color: 0xEEF3F0
+          shadow_width: 0
+          scrollbar_mode: "OFF"
+          widgets:
+            - image:
+                align: TOP_MID
+                src: ${getThermoImageId(entity, "hum")}
+            - label:
+                id: ${getValueLabelId(entity, 1)}
+                align: BOTTOM_MID
+                text: "${getMetricCaption(1)}: --${getMetricSuffix(1)}"
+                text_color: 0x24323A`;
+}
