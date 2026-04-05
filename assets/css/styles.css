@@ -494,6 +494,64 @@ textarea {
   color: #ffffff;
 }
 
+/* Light Tile Style */
+.light-widget-group.tile {
+  display: block;
+  background: #eef3f0;
+}
+
+.light-widget-group.tile.on {
+  background: #ef920c;
+}
+
+.light-tile-icon-bubble {
+  position: absolute;
+  top: 11px;
+  left: 11px;
+  padding: 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.light-tile-icon {
+  display: block;
+}
+
+.light-tile-info {
+  display: none;
+}
+
+.light-tile-title {
+  position: absolute;
+  left: 11px;
+  bottom: 27px;
+  font-size: var(--preview-font-body-size);
+  font-weight: 500;
+  color: #24323a;
+  line-height: 1;
+}
+
+.light-tile-state {
+  position: absolute;
+  left: 11px;
+  bottom: 11px;
+  font-size: var(--preview-font-body-size);
+  color: #596775;
+  line-height: 1;
+}
+
+.light-widget-group.tile.on .light-tile-title {
+  color: #ffffff;
+}
+
+.light-widget-group.tile.on .light-tile-state {
+  color: #ffffff;
+  opacity: 0.8;
+}
+
 .widget-bounds {
   position: absolute;
   right: 22px;

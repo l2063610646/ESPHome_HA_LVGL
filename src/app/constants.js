@@ -16,6 +16,7 @@ export const DEFAULT_THERMO_WIDTH = 220;
 export const DEFAULT_THERMO_HEIGHT = 112;
 export const THERMO_VALUE_BOX_HEIGHT = 80;
 export const LIGHT_STYLE_ICON = "icon";
+export const LIGHT_STYLE_TILE = "tile";
 export const LIGHT_PAD_ALL = 5;
 export const LIGHT_PAD_ROW = 2;
 export const LIGHT_DEFAULT_ICON_SIZE = 36;
@@ -91,6 +92,7 @@ export const ENTITY_CAPABILITIES = {
     ],
     styleOptions: [
       { value: LIGHT_STYLE_ICON, label: "icon" },
+      { value: LIGHT_STYLE_TILE, label: "tile" },
     ],
     createEntity(index) {
       return {

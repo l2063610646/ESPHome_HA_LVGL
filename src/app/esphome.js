@@ -1,6 +1,7 @@
 import {
   DEFAULT_BUTTON_BG_COLOR,
   LIGHT_ICON_PATHS,
+  LIGHT_STYLE_TILE,
   SWITCH_HEIGHT,
   SWITCH_WIDTH,
   THERMO_ICON_PATHS,
@@ -709,6 +710,9 @@ function renderThermoHygrometerWidget(entity) {
 }
 
 function renderLightWidget(entity) {
+  if (entity.props.style === LIGHT_STYLE_TILE) {
+    return renderLightTileWidget(entity);
+  }
   return `- button:
     id: ${getWidgetId(entity, 0)}
     x: ${entity.props.x}
@@ -771,4 +775,86 @@ function renderLightWidget(entity) {
             value = id(${getHaTextSensorId(entity, 0)}).state == "on" ? "ON" : "OFF";
             return value.c_str();
           text_color: 0xFFFFFF`;
+}
+
+function renderLightTileWidget(entity) {
+  const iconId = getLightImageId(entity);
+  const stateId = getLightStateLabelId(entity);
+  const haId = getHaTextSensorId(entity, 0);
+
+  return `- button:
+    id: ${getWidgetId(entity, 0)}
+    x: ${entity.props.x}
+    y: ${entity.props.y}
+    width: ${entity.props.width}
+    height: ${entity.props.height}
+    radius: 12
+    border_width: 1
+    border_color: 0xD7DDD9
+    checkable: true
+    pad_all: 0
+    bg_opa: COVER
+    bg_color: 0xEEF3F0
+    checked:
+      bg_color: 0xEF920C
+    shadow_width: 0
+    scrollbar_mode: "OFF"
+    state:
+      checked: !lambda return id(${haId}).state == "on";
+    on_change:
+      then:
+        - lvgl.label.update:
+            id: ${stateId}
+            text: !lambda |-
+              static std::string value;
+              value = x ? "ON" : "OFF";
+              return value.c_str();
+        - if:
+            condition:
+              lambda: return x;
+            then:
+              - homeassistant.service:
+                  service: light.turn_on
+                  data:
+                    entity_id: ${quoteYaml(entity.entityids[0])}
+            else:
+              - homeassistant.service:
+                  service: light.turn_off
+                  data:
+                    entity_id: ${quoteYaml(entity.entityids[0])}
+    widgets:
+      - obj:
+          align: TOP_LEFT
+          x: 12
+          y: 12
+          width: SIZE_CONTENT
+          height: SIZE_CONTENT
+          radius: 999
+          pad_all: 8
+          bg_color: 0xFFFFFF
+          bg_opa: 30%
+          shadow_width: 0
+          scrollbar_mode: "OFF"
+          widgets:
+            - image:
+                align: CENTER
+                src: ${iconId}
+      - label:
+          align: BOTTOM_LEFT
+          x: 12
+          y: -28
+          text_font: ${UI_FONT_BODY}
+          text: ${quoteYaml(entity.props.title)}
+          text_color: 0x24323A
+      - label:
+          id: ${stateId}
+          align: BOTTOM_LEFT
+          x: 12
+          y: -12
+          text_font: ${UI_FONT_BODY}
+          text: !lambda |-
+            static std::string value;
+            value = id(${haId}).state == "on" ? "ON" : "OFF";
+            return value.c_str();
+          text_color: 0x596775`;
 }

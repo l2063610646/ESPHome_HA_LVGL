@@ -4,6 +4,8 @@ import {
   DEFAULT_LABEL_PAD_LEFT,
   DEFAULT_SWITCH_PAD_RIGHT,
   LIGHT_ICON_PATHS,
+  LIGHT_STYLE_ICON,
+  LIGHT_STYLE_TILE,
   SWITCH_BUTTON_HEIGHT,
   SWITCH_STYLE_BUTTON,
   SWITCH_HEIGHT,
@@ -261,26 +263,53 @@ function renderThermoHygrometerPreview(entity) {
 }
 
 function renderLightPreview(entity) {
+  const isTile = entity.props.style === LIGHT_STYLE_TILE;
   const group = document.createElement("div");
-  group.className = "light-widget-group off";
+  group.className = `light-widget-group ${isTile ? "tile" : "icon"} off`;
 
-  const icon = document.createElement("img");
-  icon.className = "light-widget-icon";
-  icon.src = resolvePreviewImageSource(entity.props.icon);
-  icon.alt = "Light";
-  icon.addEventListener("error", () => {
-    if (icon.dataset.fallbackApplied === "true") {
-      return;
-    }
-    icon.dataset.fallbackApplied = "true";
-    icon.src = resolvePreviewImageSource(LIGHT_ICON_PATHS.on);
-  });
+  if (isTile) {
+    const iconBubble = document.createElement("div");
+    iconBubble.className = "light-tile-icon-bubble";
 
-  const actionLabel = document.createElement("span");
-  actionLabel.className = "light-action-label";
-  actionLabel.textContent = "OFF";
+    const icon = document.createElement("img");
+    icon.className = "light-tile-icon";
+    icon.src = resolvePreviewImageSource(entity.props.icon);
+    icon.alt = "Light";
+    icon.addEventListener("error", () => {
+      if (icon.dataset.fallbackApplied === "true") return;
+      icon.dataset.fallbackApplied = "true";
+      icon.src = resolvePreviewImageSource(LIGHT_ICON_PATHS.on);
+    });
+    iconBubble.append(icon);
 
-  group.append(icon, actionLabel);
+    const titleLabel = document.createElement("span");
+    titleLabel.className = "light-tile-title";
+    titleLabel.textContent = entity.props.title;
+
+    const stateLabel = document.createElement("span");
+    stateLabel.className = "light-tile-state";
+    stateLabel.textContent = "OFF";
+
+    group.append(iconBubble, titleLabel, stateLabel);
+  } else {
+    const icon = document.createElement("img");
+    icon.className = "light-widget-icon";
+    icon.src = resolvePreviewImageSource(entity.props.icon);
+    icon.alt = "Light";
+    icon.addEventListener("error", () => {
+      if (icon.dataset.fallbackApplied === "true") {
+        return;
+      }
+      icon.dataset.fallbackApplied = "true";
+      icon.src = resolvePreviewImageSource(LIGHT_ICON_PATHS.on);
+    });
+
+    const actionLabel = document.createElement("span");
+    actionLabel.className = "light-action-label";
+    actionLabel.textContent = "OFF";
+
+    group.append(icon, actionLabel);
+  }
   return group;
 }
 

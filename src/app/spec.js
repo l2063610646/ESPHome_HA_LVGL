@@ -14,6 +14,7 @@ import {
   ENTITY_CAPABILITIES,
   LIGHT_ICON_PATHS,
   LIGHT_STYLE_ICON,
+  LIGHT_STYLE_TILE,
   SWITCH_BUTTON_STYLE_HEIGHT,
   SWITCH_STYLE_BUTTON,
   SWITCH_STYLE_TOGGLE,
@@ -289,8 +290,8 @@ export function normalizeEntities(entities, canvasWidth = BOARD_CONFIGS.nextion_
 export function normalizeEntity(entity, canvasWidth = BOARD_CONFIGS.nextion_35.width, canvasHeight = BOARD_CONFIGS.nextion_35.height) {
   const type = normalizeType(entity.type || "switch");
   const props = entity.props || {};
-  const width = clampNumber(props.width ?? defaultWidthForType(type), minWidthForType(type), canvasWidth);
   const style = normalizeStyle(type, props.style);
+  const width = clampNumber(props.width ?? defaultWidthForType(type, style), minWidthForType(type, style), canvasWidth);
   const height = clampNumber(props.height ?? defaultHeightForType(type, style), minHeightForType(type, style), canvasHeight);
   const entityids = normalizeEntityIds(entity, type);
   return {
@@ -368,7 +369,7 @@ export function normalizeStyle(type, value) {
     return value === SWITCH_STYLE_BUTTON ? SWITCH_STYLE_BUTTON : SWITCH_STYLE_TOGGLE;
   }
   if (type === "light") {
-    return LIGHT_STYLE_ICON;
+    return value === LIGHT_STYLE_TILE ? LIGHT_STYLE_TILE : LIGHT_STYLE_ICON;
   }
   return THERMO_HYGROMETER_STYLE_COMPACT;
 }
@@ -387,12 +388,12 @@ export function defaultTitleForEntity(entity) {
   return defaultTitleForType(entity.type, entity.entityids);
 }
 
-export function defaultWidthForType(type) {
+export function defaultWidthForType(type, style) {
   if (type === "thermo_hygrometer") {
     return DEFAULT_THERMO_WIDTH;
   }
   if (type === "light") {
-    return DEFAULT_LIGHT_WIDTH;
+    return style === LIGHT_STYLE_TILE ? 120 : DEFAULT_LIGHT_WIDTH;
   }
   return DEFAULT_WIDTH;
 }
@@ -402,17 +403,17 @@ export function defaultHeightForType(type, style = SWITCH_STYLE_TOGGLE) {
     return DEFAULT_THERMO_HEIGHT;
   }
   if (type === "light") {
-    return DEFAULT_LIGHT_HEIGHT;
+    return style === LIGHT_STYLE_TILE ? 120 : DEFAULT_LIGHT_HEIGHT;
   }
   return style === SWITCH_STYLE_BUTTON ? SWITCH_BUTTON_STYLE_HEIGHT : DEFAULT_HEIGHT;
 }
 
-export function minWidthForType(type) {
+export function minWidthForType(type, style) {
   if (type === "thermo_hygrometer") {
     return 180;
   }
   if (type === "light") {
-    return Math.max(LIGHT_DEFAULT_ICON_SIZE, LIGHT_LABEL_MIN_WIDTH) + LIGHT_PAD_ALL * 2;
+    return style === LIGHT_STYLE_TILE ? 80 : 48; // Minimum touch target size
   }
   return 150;
 }
@@ -422,7 +423,7 @@ export function minHeightForType(type, style = SWITCH_STYLE_TOGGLE) {
     return DEFAULT_THERMO_HEIGHT;
   }
   if (type === "light") {
-    return LIGHT_DEFAULT_ICON_SIZE + LIGHT_LABEL_HEIGHT + LIGHT_PAD_ALL * 2 + LIGHT_PAD_ROW;
+    return 48;
   }
   return style === SWITCH_STYLE_BUTTON ? SWITCH_BUTTON_STYLE_HEIGHT : 56;
 }
