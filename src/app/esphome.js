@@ -941,11 +941,6 @@ function renderLightSliderWidget(entity) {
             type: FLEX
             flex_flow: ROW
             flex_align_cross: CENTER
-          on_click:
-            - homeassistant.service:
-                action: light.toggle
-                data:
-                  entity_id: ${quoteYaml(entity.entityids[0])}
           widgets:
             - obj:
                 id: ${getWidgetId(entity, 0)}_bubble
@@ -959,6 +954,11 @@ function renderLightSliderWidget(entity) {
                   type: FLEX
                   flex_align_main: CENTER
                   flex_align_cross: CENTER
+                on_click:
+                  - homeassistant.service:
+                      action: light.toggle
+                      data:
+                        entity_id: ${quoteYaml(entity.entityids[0])}
                 widgets:
                   - image:
                       id: ${getWidgetId(entity, 0)}_icon
