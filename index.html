@@ -216,6 +216,17 @@
                 <span>Icon</span>
                 <input id="field-light-icon" type="text" placeholder="assets/images/light.png / /abs/light.png / https://... / mdi:lightbulb" />
               </label>
+              <div id="light-tile-position-fields" class="hidden">
+                <label class="stack">
+                  <span>Tile Icon Position</span>
+                  <select id="field-light-tile-icon-position">
+                    <option value="top-left">top-left</option>
+                    <option value="top-right">top-right</option>
+                    <option value="bottom-left">bottom-left</option>
+                    <option value="bottom-right">bottom-right</option>
+                  </select>
+                </label>
+              </div>
               <div class="icon-preview-grid">
                 <div class="icon-preview-card">
                   <span class="icon-preview-label">Icon Preview</span>
@@ -226,7 +237,7 @@
                 </div>
               </div>
               <p class="hint">
-                The light widget uses one icon and switches the whole widget background for <code>on</code> / <code>off</code>.
+                The light widget uses one icon and switches the whole widget background for <code>on</code> / <code>off</code>. For <code>tile</code> style you can choose which corner the icon bubble uses.
               </p>
             </div>
             <div class="grid two">

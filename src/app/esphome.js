@@ -1,7 +1,9 @@
 import {
   DEFAULT_BUTTON_BG_COLOR,
+  getLightTileLayout,
   LIGHT_ICON_PATHS,
   LIGHT_STYLE_TILE,
+  LIGHT_TILE_ICON_BUBBLE_OPACITY,
   SWITCH_HEIGHT,
   SWITCH_WIDTH,
   THERMO_ICON_PATHS,
@@ -781,6 +783,7 @@ function renderLightTileWidget(entity) {
   const iconId = getLightImageId(entity);
   const stateId = getLightStateLabelId(entity);
   const haId = getHaTextSensorId(entity, 0);
+  const layout = getLightTileLayout(entity.props.tile_icon_position);
 
   return `- button:
     id: ${getWidgetId(entity, 0)}
@@ -824,15 +827,16 @@ function renderLightTileWidget(entity) {
                     entity_id: ${quoteYaml(entity.entityids[0])}
     widgets:
       - obj:
-          align: TOP_LEFT
-          x: 12
-          y: 12
+          align: ${layout.icon.align}
+          x: ${layout.icon.x}
+          y: ${layout.icon.y}
           width: SIZE_CONTENT
           height: SIZE_CONTENT
           radius: 999
           pad_all: 8
+          border_width: 0
           bg_color: 0xFFFFFF
-          bg_opa: 30%
+          bg_opa: ${LIGHT_TILE_ICON_BUBBLE_OPACITY}%
           shadow_width: 0
           scrollbar_mode: "OFF"
           widgets:
@@ -840,17 +844,17 @@ function renderLightTileWidget(entity) {
                 align: CENTER
                 src: ${iconId}
       - label:
-          align: BOTTOM_LEFT
-          x: 12
-          y: -28
+          align: ${layout.title.align}
+          x: ${layout.title.x}
+          y: ${layout.title.y}
           text_font: ${UI_FONT_BODY}
           text: ${quoteYaml(entity.props.title)}
           text_color: 0x24323A
       - label:
           id: ${stateId}
-          align: BOTTOM_LEFT
-          x: 12
-          y: -12
+          align: ${layout.state.align}
+          x: ${layout.state.x}
+          y: ${layout.state.y}
           text_font: ${UI_FONT_BODY}
           text: !lambda |-
             static std::string value;

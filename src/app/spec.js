@@ -13,8 +13,10 @@ import {
   DEFAULT_WIDTH,
   ENTITY_CAPABILITIES,
   LIGHT_ICON_PATHS,
+  LIGHT_TILE_ICON_POSITION_DEFAULT,
   LIGHT_STYLE_ICON,
   LIGHT_STYLE_TILE,
+  normalizeLightTileIconPosition,
   SWITCH_BUTTON_STYLE_HEIGHT,
   SWITCH_STYLE_BUTTON,
   SWITCH_STYLE_TOGGLE,
@@ -135,6 +137,9 @@ export function generateSpecYaml(state) {
     if (entity.type === "light") {
       if (normalizeIconSource(entity.props.icon)) {
         lines.push(`      icon: ${quoteYaml(entity.props.icon)}`);
+      }
+      if (normalizeStyle(entity.type, entity.props.style) === LIGHT_STYLE_TILE) {
+        lines.push(`      tile_icon_position: ${quoteYaml(normalizeLightTileIconPosition(entity.props.tile_icon_position))}`);
       }
     }
   });
@@ -313,6 +318,9 @@ export function normalizeEntity(entity, canvasWidth = BOARD_CONFIGS.nextion_35.w
       ),
       icon: normalizeIconSource(
         props.icon || props.icon_image || props.on_icon || props.on_image || props.off_icon || props.off_image || props.icon_on || props.icon_off || LIGHT_ICON_PATHS.on
+      ),
+      tile_icon_position: normalizeLightTileIconPosition(
+        props.tile_icon_position || props.icon_position || props.icon_align || LIGHT_TILE_ICON_POSITION_DEFAULT
       ),
     },
   };

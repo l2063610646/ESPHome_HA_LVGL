@@ -3,9 +3,13 @@ import {
   DEFAULT_BUTTON_BG_COLOR,
   DEFAULT_LABEL_PAD_LEFT,
   DEFAULT_SWITCH_PAD_RIGHT,
+  getLightTileLayout,
   LIGHT_ICON_PATHS,
+  LIGHT_TILE_ICON_POSITION_DEFAULT,
+  LIGHT_TILE_ICON_POSITION_OPTIONS,
   LIGHT_STYLE_ICON,
   LIGHT_STYLE_TILE,
+  LIGHT_TILE_ICON_BUBBLE_OPACITY,
   SWITCH_BUTTON_HEIGHT,
   SWITCH_STYLE_BUTTON,
   SWITCH_HEIGHT,
@@ -123,6 +127,7 @@ export function renderInspector(entity, elements) {
     switchStyleFields,
     thermoIconFields,
     lightIconFields,
+    lightTilePositionFields,
     fieldType,
     fieldEntityIdLabel,
     fieldEntityId,
@@ -137,6 +142,7 @@ export function renderInspector(entity, elements) {
     fieldTempIcon,
     fieldHumIcon,
     fieldLightIcon,
+    fieldLightTileIconPosition,
   } = elements;
 
   const hasEntity = Boolean(entity);
@@ -152,7 +158,9 @@ export function renderInspector(entity, elements) {
   switchStyleFields.classList.toggle("hidden", false);
   thermoIconFields.classList.toggle("hidden", entity.type !== "thermo_hygrometer");
   lightIconFields.classList.toggle("hidden", entity.type !== "light");
+  lightTilePositionFields.classList.toggle("hidden", !(entity.type === "light" && entity.props.style === LIGHT_STYLE_TILE));
   rebuildStyleOptions(fieldStyle, entity.type);
+  rebuildLightTilePositionOptions(fieldLightTileIconPosition);
   fieldType.value = entity.type;
   fieldEntityIdLabel.textContent = capability.entityFields[0]?.label || "Entity ID";
   fieldEntityId2Label.textContent = capability.entityFields[1]?.label || "Entity ID 2";
@@ -167,6 +175,7 @@ export function renderInspector(entity, elements) {
   fieldTempIcon.value = entity.props.temp_icon ?? "";
   fieldHumIcon.value = entity.props.hum_icon ?? "";
   fieldLightIcon.value = entity.props.icon ?? "";
+  fieldLightTileIconPosition.value = entity.props.tile_icon_position ?? LIGHT_TILE_ICON_POSITION_DEFAULT;
   updateThermoIconInspectorPreview(elements);
   updateLightIconInspectorPreview(elements);
 }
@@ -268,8 +277,11 @@ function renderLightPreview(entity) {
   group.className = `light-widget-group ${isTile ? "tile" : "icon"} off`;
 
   if (isTile) {
+    const layout = getLightTileLayout(entity.props.tile_icon_position);
     const iconBubble = document.createElement("div");
     iconBubble.className = "light-tile-icon-bubble";
+    iconBubble.style.backgroundColor = `rgba(255, 255, 255, ${LIGHT_TILE_ICON_BUBBLE_OPACITY / 100})`;
+    applyTilePlacement(iconBubble, layout.icon);
 
     const icon = document.createElement("img");
     icon.className = "light-tile-icon";
@@ -285,10 +297,12 @@ function renderLightPreview(entity) {
     const titleLabel = document.createElement("span");
     titleLabel.className = "light-tile-title";
     titleLabel.textContent = entity.props.title;
+    applyTilePlacement(titleLabel, layout.title);
 
     const stateLabel = document.createElement("span");
     stateLabel.className = "light-tile-state";
     stateLabel.textContent = "OFF";
+    applyTilePlacement(stateLabel, layout.state);
 
     group.append(iconBubble, titleLabel, stateLabel);
   } else {
@@ -311,6 +325,23 @@ function renderLightPreview(entity) {
     group.append(icon, actionLabel);
   }
   return group;
+}
+
+function rebuildLightTilePositionOptions(field) {
+  field.replaceChildren();
+  LIGHT_TILE_ICON_POSITION_OPTIONS.forEach((option) => {
+    const node = document.createElement("option");
+    node.value = option.value;
+    node.textContent = option.label;
+    field.append(node);
+  });
+}
+
+function applyTilePlacement(node, placement) {
+  node.style.top = placement.top === null ? "" : `${placement.top}px`;
+  node.style.right = placement.right === null || placement.right === undefined ? "" : `${placement.right}px`;
+  node.style.bottom = placement.bottom === null || placement.bottom === undefined ? "" : `${placement.bottom}px`;
+  node.style.left = placement.left === null || placement.left === undefined ? "" : `${placement.left}px`;
 }
 
 function rebuildStyleOptions(fieldStyle, type) {

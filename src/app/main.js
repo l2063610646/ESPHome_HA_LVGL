@@ -82,9 +82,11 @@ const elements = {
   switchStyleFields: document.getElementById("switch-style-fields"),
   thermoIconFields: document.getElementById("thermo-icon-fields"),
   lightIconFields: document.getElementById("light-icon-fields"),
+  lightTilePositionFields: document.getElementById("light-tile-position-fields"),
   fieldTempIcon: document.getElementById("field-temp-icon"),
   fieldHumIcon: document.getElementById("field-hum-icon"),
   fieldLightIcon: document.getElementById("field-light-icon"),
+  fieldLightTileIconPosition: document.getElementById("field-light-tile-icon-position"),
   tempIconPreviewImg: document.getElementById("temp-icon-preview-img"),
   humIconPreviewImg: document.getElementById("hum-icon-preview-img"),
   tempIconPreviewFallback: document.getElementById("temp-icon-preview-fallback"),
@@ -217,6 +219,7 @@ elements.deleteBtn.addEventListener("click", () => {
   elements.fieldTempIcon,
   elements.fieldHumIcon,
   elements.fieldLightIcon,
+  elements.fieldLightTileIconPosition,
   elements.fieldX,
   elements.fieldY,
   elements.fieldWidth,
@@ -421,6 +424,7 @@ function handleInspectorChange() {
   }
   if (entity.type === "light") {
     entity.props.icon = normalizeIconSource(elements.fieldLightIcon.value);
+    entity.props.tile_icon_position = elements.fieldLightTileIconPosition.value.trim() || entity.props.tile_icon_position;
   }
 
   const pendingWidth = readPendingNumber(elements.fieldWidth.value);
@@ -472,6 +476,7 @@ function handleInspectorCommit() {
   }
   if (entity.type === "light") {
     entity.props.icon = normalizeIconSource(elements.fieldLightIcon.value);
+    entity.props.tile_icon_position = elements.fieldLightTileIconPosition.value.trim() || entity.props.tile_icon_position;
   }
   entity.props.width = clampNumber(
     elements.fieldWidth.value,

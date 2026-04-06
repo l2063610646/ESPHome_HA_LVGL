@@ -55,6 +55,9 @@ Supported styles:
 - `switch.props.style: toggle`
 - `switch.props.style: button`
 - `light.props.style: icon`
+- `light.props.style: tile`
+- `light.props.tile_icon_position`
+  Optional for `light.props.style: tile`. Supported values: `top-left`, `top-right`, `bottom-left`, `bottom-right`.
 - `thermo_hygrometer.props.style: compact`
 
 Example:

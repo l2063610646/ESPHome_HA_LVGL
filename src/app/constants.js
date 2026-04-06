@@ -17,6 +17,18 @@ export const DEFAULT_THERMO_HEIGHT = 112;
 export const THERMO_VALUE_BOX_HEIGHT = 80;
 export const LIGHT_STYLE_ICON = "icon";
 export const LIGHT_STYLE_TILE = "tile";
+export const LIGHT_TILE_ICON_BUBBLE_OPACITY = 40;
+export const LIGHT_TILE_ICON_POSITION_TOP_LEFT = "top-left";
+export const LIGHT_TILE_ICON_POSITION_TOP_RIGHT = "top-right";
+export const LIGHT_TILE_ICON_POSITION_BOTTOM_LEFT = "bottom-left";
+export const LIGHT_TILE_ICON_POSITION_BOTTOM_RIGHT = "bottom-right";
+export const LIGHT_TILE_ICON_POSITION_DEFAULT = LIGHT_TILE_ICON_POSITION_TOP_LEFT;
+export const LIGHT_TILE_ICON_POSITION_OPTIONS = [
+  { value: LIGHT_TILE_ICON_POSITION_TOP_LEFT, label: "top-left" },
+  { value: LIGHT_TILE_ICON_POSITION_TOP_RIGHT, label: "top-right" },
+  { value: LIGHT_TILE_ICON_POSITION_BOTTOM_LEFT, label: "bottom-left" },
+  { value: LIGHT_TILE_ICON_POSITION_BOTTOM_RIGHT, label: "bottom-right" },
+];
 export const LIGHT_PAD_ALL = 5;
 export const LIGHT_PAD_ROW = 2;
 export const LIGHT_DEFAULT_ICON_SIZE = 36;
@@ -106,8 +118,55 @@ export const ENTITY_CAPABILITIES = {
           title: `Light ${index}`,
           style: LIGHT_STYLE_ICON,
           icon: LIGHT_ICON_PATHS.on,
+          tile_icon_position: LIGHT_TILE_ICON_POSITION_DEFAULT,
         },
       };
     },
   },
 };
+
+export function normalizeLightTileIconPosition(value) {
+  return LIGHT_TILE_ICON_POSITION_OPTIONS.some((option) => option.value === value)
+    ? value
+    : LIGHT_TILE_ICON_POSITION_DEFAULT;
+}
+
+export function getLightTileLayout(position) {
+  const normalized = normalizeLightTileIconPosition(position);
+  const icon = {
+    top: normalized.startsWith("top") ? 12 : null,
+    right: normalized.endsWith("right") ? 12 : null,
+    bottom: normalized.startsWith("bottom") ? 12 : null,
+    left: normalized.endsWith("left") ? 12 : null,
+    align: normalized === LIGHT_TILE_ICON_POSITION_TOP_RIGHT
+      ? "TOP_RIGHT"
+      : normalized === LIGHT_TILE_ICON_POSITION_BOTTOM_LEFT
+        ? "BOTTOM_LEFT"
+        : normalized === LIGHT_TILE_ICON_POSITION_BOTTOM_RIGHT
+          ? "BOTTOM_RIGHT"
+          : "TOP_LEFT",
+    x: normalized.endsWith("right") ? -12 : 12,
+    y: normalized.startsWith("bottom") ? -12 : 12,
+  };
+
+  const labelsOnTop = normalized.startsWith("bottom");
+  return {
+    icon,
+    title: {
+      align: labelsOnTop ? "TOP_LEFT" : "BOTTOM_LEFT",
+      x: 12,
+      y: labelsOnTop ? 12 : -28,
+      top: labelsOnTop ? 12 : null,
+      bottom: labelsOnTop ? null : 28,
+      left: 12,
+    },
+    state: {
+      align: labelsOnTop ? "TOP_LEFT" : "BOTTOM_LEFT",
+      x: 12,
+      y: labelsOnTop ? 28 : -12,
+      top: labelsOnTop ? 28 : null,
+      bottom: labelsOnTop ? null : 12,
+      left: 12,
+    },
+  };
+}
