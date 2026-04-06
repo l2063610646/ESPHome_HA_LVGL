@@ -451,6 +451,33 @@ function renderSensorBlock(entities) {
         value: !lambda |-
           if (id(${getHaTextSensorId(entity, 0)}).state != "on") return 0;
           return std::isnan(x) ? 0 : (x / 255.0) * 100.0;
+    - lvgl.obj.update:
+        id: ${getWidgetId(entity, 0)}_orange_fill
+        width: !lambda |-
+          float val = 0;
+          if (id(${getHaTextSensorId(entity, 0)}).state == "on" && !std::isnan(x)) {
+            val = (x / 255.0) * 100.0;
+          }
+          auto wrapper = id(${getWidgetId(entity, 0)}_wrapper);
+          int w = lv_obj_get_width(wrapper);
+          int fill_w = (int)((w * val) / 100.0f);
+          if(fill_w < 0) fill_w = 0;
+          if(fill_w > w) fill_w = w;
+          return fill_w;
+    - lvgl.obj.update:
+        id: ${getWidgetId(entity, 0)}_pill
+        x: !lambda |-
+          float val = 0;
+          if (id(${getHaTextSensorId(entity, 0)}).state == "on" && !std::isnan(x)) {
+            val = (x / 255.0) * 100.0;
+          }
+          auto wrapper = id(${getWidgetId(entity, 0)}_wrapper);
+          int w = lv_obj_get_width(wrapper);
+          int fill_w = (int)((w * val) / 100.0f);
+          if(fill_w < 0) fill_w = 0;
+          if(fill_w > w) fill_w = w;
+          int pill_x = fill_w - 10;
+          return pill_x < 0 ? 0 : pill_x;
     - lvgl.label.update:
         id: ${getLightStateLabelId(entity)}
         text: !lambda |-
@@ -905,53 +932,96 @@ function renderLightSliderWidget(entity) {
                       text_font: ${UI_FONT_BODY}
                       text: "OFF"
                       text_color: 0x596775
-      - slider:
-          id: ${getWidgetId(entity, 0)}
+      - obj:
+          id: ${getWidgetId(entity, 0)}_wrapper
           width: 100%
-          height: 38
-          min_value: 0
-          max_value: 100
-          radius: 12
+          flex_grow: 1
           bg_color: 0xFEEDBD
+          radius: 12
+          border_width: 0
+          pad_all: 0
           scrollbar_mode: "OFF"
-          indicator:
-            bg_color: 0xFDBB13
-            radius: 12
-          knob:
-            bg_color: 0xFFFFFF
-            radius: 2
-            pad_top: -11
-            pad_bottom: -11
-            pad_left: -9
-            pad_right: -25
-            border_width: 0
-            shadow_width: 0
-          on_change:
-            then:
-              - lvgl.label.update:
-                  id: ${stateId}
-                  text: !lambda |-
-                    static char buf[10];
-                    if (x == 0) return "OFF";
-                    sprintf(buf, "%.0f%%", (float)x);
-                    return buf;
-              - if:
-                  condition:
-                    lambda: "return x == 0;"
+          widgets:
+            - obj:
+                id: ${getWidgetId(entity, 0)}_orange_fill
+                width: 0
+                height: 100%
+                bg_color: 0xFDBB13
+                radius: 12
+                border_width: 0
+                scrollbar_mode: "OFF"
+            - obj:
+                id: ${getWidgetId(entity, 0)}_pill
+                width: 4
+                height: 16
+                radius: 2
+                bg_color: 0xFFFFFF
+                align: LEFT_MID
+                x: 0
+                border_width: 0
+                scrollbar_mode: "OFF"
+            - slider:
+                id: ${getWidgetId(entity, 0)}
+                width: 100%
+                height: 100%
+                min_value: 0
+                max_value: 100
+                radius: 12
+                bg_opa: TRANSP
+                scrollbar_mode: "OFF"
+                indicator:
+                  bg_opa: TRANSP
+                knob:
+                  bg_opa: TRANSP
+                  border_width: 0
+                  shadow_width: 0
+                on_change:
                   then:
-                    - homeassistant.service:
-                        service: light.turn_off
-                        data:
-                          entity_id: ${quoteYaml(entity.entityids[0])}
-                  else:
-                    - homeassistant.service:
-                        service: light.turn_on
-                        data:
-                          entity_id: ${quoteYaml(entity.entityids[0])}
-                        data_template:
-                          brightness_pct: "{{ brightness }}"
-                        variables:
-                          brightness: "return x;"`;
+                    - lvgl.label.update:
+                        id: ${stateId}
+                        text: !lambda |-
+                          static char buf[10];
+                          if (x == 0) return "OFF";
+                          sprintf(buf, "%.0f%%", (float)x);
+                          return buf;
+                    - lvgl.obj.update:
+                        id: ${getWidgetId(entity, 0)}_orange_fill
+                        width: !lambda |-
+                          auto wrapper = id(${getWidgetId(entity, 0)}_wrapper);
+                          int w = lv_obj_get_width(wrapper);
+                          float val = x;
+                          int fill_w = (int)((w * val) / 100.0f);
+                          if(fill_w < 0) fill_w = 0;
+                          if(fill_w > w) fill_w = w;
+                          return fill_w;
+                    - lvgl.obj.update:
+                        id: ${getWidgetId(entity, 0)}_pill
+                        x: !lambda |-
+                          auto wrapper = id(${getWidgetId(entity, 0)}_wrapper);
+                          int w = lv_obj_get_width(wrapper);
+                          float val = x;
+                          int fill_w = (int)((w * val) / 100.0f);
+                          if(fill_w < 0) fill_w = 0;
+                          if(fill_w > w) fill_w = w;
+                          int pill_x = fill_w - 10;
+                          return pill_x < 0 ? 0 : pill_x;
+                    - if:
+                        condition:
+                          lambda: "return x == 0;"
+                        then:
+                          - homeassistant.service:
+                              service: light.turn_off
+                              data:
+                                entity_id: ${quoteYaml(entity.entityids[0])}
+                        else:
+                          - homeassistant.service:
+                              service: light.turn_on
+                              data:
+                                entity_id: ${quoteYaml(entity.entityids[0])}
+                              data_template:
+                                brightness_pct: "{{ brightness }}"
+                              variables:
+                                brightness: "return x;"`;
 }
 
 function renderLightTileWidget(entity) {
