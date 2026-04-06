@@ -3,6 +3,7 @@ import {
   getLightTileLayout,
   LIGHT_ICON_PATHS,
   LIGHT_STYLE_TILE,
+  LIGHT_STYLE_SLIDER,
   LIGHT_TILE_ICON_BUBBLE_OPACITY,
   SWITCH_HEIGHT,
   SWITCH_WIDTH,
@@ -36,6 +37,9 @@ export function renderCombinedYaml(state) {
     "switch:",
     indentLines(renderSwitchBlock(entities) || "[]", 2),
     "",
+    "sensor:",
+    indentLines(renderSensorBlock(entities) || "[]", 2),
+    "",
     "text_sensor:",
     indentLines(renderTextSensorBlock(entities) || "[]", 2),
     "",
@@ -49,18 +53,18 @@ export function renderCombinedYaml(state) {
 function indentLines(text, spaces) {
   const prefix = " ".repeat(spaces);
   return String(text)
-    .split("\n")
-    .map((line) => (line ? `${prefix}${line}` : line))
-    .join("\n");
+      .split("\n")
+      .map((line) => (line ? `${prefix}${line}` : line))
+      .join("\n");
 }
 
 function sanitizeId(value) {
   let slug = String(value || "")
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9_]+/g, "_")
-    .replace(/_+/g, "_")
-    .replace(/^_+|_+$/g, "");
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9_]+/g, "_")
+      .replace(/_+/g, "_")
+      .replace(/^_+|_+$/g, "");
   if (!slug) {
     throw new Error("Entity ID produced an empty sanitized ID");
   }
@@ -428,49 +432,77 @@ lvgl:
 
 function renderSwitchBlock(entities) {
   return entities
-    .filter((entity) => entity.type === "switch")
-    .flatMap((entity) => entity.entityids.map((_, index) => renderSwitchComponent(entity, index)))
-    .join("\n");
+      .filter((entity) => entity.type === "switch")
+      .flatMap((entity) => entity.entityids.map((_, index) => renderSwitchComponent(entity, index)))
+      .join("\n");
+}
+
+function renderSensorBlock(entities) {
+  return entities
+      .filter((entity) => entity.type === "light" && entity.props.style === LIGHT_STYLE_SLIDER)
+      .flatMap((entity) => [
+        `- platform: homeassistant
+  id: ha_brightness_${getEntitySlug(entity)}
+  entity_id: ${quoteYaml(entity.entityids[0])}
+  attribute: brightness
+  on_value:
+    - lvgl.slider.update:
+        id: ${getWidgetId(entity, 0)}
+        value: !lambda |-
+          if (id(${getHaTextSensorId(entity, 0)}).state != "on") return 0;
+          return std::isnan(x) ? 0 : (x / 255.0) * 100.0;
+    - lvgl.label.update:
+        id: ${getLightStateLabelId(entity)}
+        text: !lambda |-
+          static char buf[10];
+          if (id(${getHaTextSensorId(entity, 0)}).state != "on" || std::isnan(x) || x == 0) {
+            return "OFF";
+          }
+          sprintf(buf, "%.0f%%", (x / 255.0) * 100.0);
+          return buf;`
+      ])
+      .join("\n");
 }
 
 function renderTextSensorBlock(entities) {
   return entities
-    .filter((entity) => entity.type === "thermo_hygrometer" || entity.type === "light")
-    .flatMap((entity) =>
-      entity.type === "thermo_hygrometer"
-        ? entity.entityids.map((_, index) => renderTextSensorComponent(entity, index))
-        : [renderLightStateTextSensorComponent(entity)]
-    )
-    .join("\n");
+      .filter((entity) => entity.type === "thermo_hygrometer" || entity.type === "light")
+      .flatMap((entity) => {
+        if (entity.type === "thermo_hygrometer") {
+          return entity.entityids.map((_, index) => renderTextSensorComponent(entity, index));
+        }
+        return [renderLightStateTextSensorComponent(entity)];
+      })
+      .join("\n");
 }
 
 function renderImageBlock(entities) {
   return entities
-    .filter((entity) => entity.type === "thermo_hygrometer" || entity.type === "light")
-    .flatMap((entity) => {
-      if (entity.type === "thermo_hygrometer") {
-        return [
-          `- file: ${quoteYaml(entity.props.temp_icon || THERMO_ICON_PATHS.temp)}
+      .filter((entity) => entity.type === "thermo_hygrometer" || entity.type === "light")
+      .flatMap((entity) => {
+        if (entity.type === "thermo_hygrometer") {
+          return [
+            `- file: ${quoteYaml(entity.props.temp_icon || THERMO_ICON_PATHS.temp)}
   id: ${getThermoImageId(entity, "temp")}
   type: rgb565
   transparency: alpha_channel
   resize: 32x32`,
-          `- file: ${quoteYaml(entity.props.hum_icon || THERMO_ICON_PATHS.hum)}
+            `- file: ${quoteYaml(entity.props.hum_icon || THERMO_ICON_PATHS.hum)}
   id: ${getThermoImageId(entity, "hum")}
   type: rgb565
   transparency: alpha_channel
   resize: 32x32`,
-        ];
-      }
+          ];
+        }
 
-      return [
-        `- file: ${quoteYaml(entity.props.icon || LIGHT_ICON_PATHS.on)}
+        return [
+          `- file: ${quoteYaml(entity.props.icon || LIGHT_ICON_PATHS.on)}
   id: ${getLightImageId(entity)}
   type: rgb565
   transparency: alpha_channel`,
-      ];
-    })
-    .join("\n");
+        ];
+      })
+      .join("\n");
 }
 
 function renderWidgetBlock(entities) {
@@ -508,6 +540,23 @@ function renderTextSensorComponent(entity, index) {
 }
 
 function renderLightStateTextSensorComponent(entity) {
+  if (entity.props.style === LIGHT_STYLE_SLIDER) {
+    return `- platform: homeassistant
+  id: ${getHaTextSensorId(entity, 0)}
+  entity_id: ${quoteYaml(entity.entityids[0])}
+  on_value:
+    - if:
+        condition:
+          lambda: "return x == \\"off\\";"
+        then:
+          - lvgl.slider.update:
+              id: ${getWidgetId(entity, 0)}
+              value: 0
+          - lvgl.label.update:
+              id: ${getLightStateLabelId(entity)}
+              text: "OFF"`;
+  }
+
   return `- platform: homeassistant
   id: ${getHaTextSensorId(entity, 0)}
   entity_id: ${quoteYaml(entity.entityids[0])}
@@ -527,8 +576,8 @@ function renderLightStateTextSensorComponent(entity) {
 function renderWidget(entity) {
   if (entity.type === "switch") {
     return entity.props.style === "button"
-      ? renderSingleSwitchButtonWidget(entity)
-      : renderSingleSwitchToggleWidget(entity);
+        ? renderSingleSwitchButtonWidget(entity)
+        : renderSingleSwitchToggleWidget(entity);
   }
   if (entity.type === "light") {
     return renderLightWidget(entity);
@@ -715,6 +764,9 @@ function renderLightWidget(entity) {
   if (entity.props.style === LIGHT_STYLE_TILE) {
     return renderLightTileWidget(entity);
   }
+  if (entity.props.style === LIGHT_STYLE_SLIDER) {
+    return renderLightSliderWidget(entity);
+  }
   return `- button:
     id: ${getWidgetId(entity, 0)}
     x: ${entity.props.x}
@@ -777,6 +829,129 @@ function renderLightWidget(entity) {
             value = id(${getHaTextSensorId(entity, 0)}).state == "on" ? "ON" : "OFF";
             return value.c_str();
           text_color: 0xFFFFFF`;
+}
+
+function renderLightSliderWidget(entity) {
+  const iconId = getLightImageId(entity);
+  const stateId = getLightStateLabelId(entity);
+  const haId = getHaTextSensorId(entity, 0);
+
+  return `- obj:
+    id: ${getContainerId(entity)}
+    x: ${entity.props.x}
+    y: ${entity.props.y}
+    width: ${entity.props.width}
+    height: ${entity.props.height}
+    radius: 14
+    border_width: 1
+    border_color: 0xD7DDD9
+    pad_all: 12
+    bg_opa: COVER
+    bg_color: 0xFDFAF3
+    shadow_width: 4
+    shadow_color: 0x1F2933
+    shadow_opa: 6%
+    scrollbar_mode: "OFF"
+    layout:
+      type: FLEX
+      flex_flow: COLUMN
+      flex_align_main: SPACE_BETWEEN
+      flex_align_cross: STRETCH
+    widgets:
+      - obj:
+          width: 100%
+          height: SIZE_CONTENT
+          border_width: 0
+          bg_opa: TRANSP
+          pad_all: 0
+          scrollbar_mode: "OFF"
+          layout:
+            type: FLEX
+            flex_flow: ROW
+            flex_align_cross: CENTER
+          widgets:
+            - obj:
+                width: 44
+                height: 44
+                radius: 22
+                bg_color: 0xFEEDBD
+                border_width: 0
+                scrollbar_mode: "OFF"
+                layout:
+                  type: FLEX
+                  flex_align_main: CENTER
+                  flex_align_cross: CENTER
+                widgets:
+                  - image:
+                      src: ${iconId}
+            - obj:
+                width: SIZE_CONTENT
+                height: SIZE_CONTENT
+                border_width: 0
+                bg_opa: TRANSP
+                pad_all: 0
+                pad_left: 12
+                scrollbar_mode: "OFF"
+                layout:
+                  type: FLEX
+                  flex_flow: COLUMN
+                widgets:
+                  - label:
+                      text_font: ${UI_FONT_BODY}
+                      text: ${quoteYaml(entity.props.title)}
+                      text_color: 0x24323A
+                  - label:
+                      id: ${stateId}
+                      text_font: ${UI_FONT_BODY}
+                      text: "OFF"
+                      text_color: 0x596775
+      - slider:
+          id: ${getWidgetId(entity, 0)}
+          width: 100%
+          height: 38
+          min_value: 0
+          max_value: 100
+          radius: 12
+          bg_color: 0xFEEDBD
+          scrollbar_mode: "OFF"
+          indicator:
+            bg_color: 0xFDBB13
+            radius: 12
+          knob:
+            bg_color: 0xFFFFFF
+            radius: 2
+            pad_top: -11
+            pad_bottom: -11
+            pad_left: -9
+            pad_right: -25
+            border_width: 0
+            shadow_width: 0
+          on_change:
+            then:
+              - lvgl.label.update:
+                  id: ${stateId}
+                  text: !lambda |-
+                    static char buf[10];
+                    if (x == 0) return "OFF";
+                    sprintf(buf, "%.0f%%", (float)x);
+                    return buf;
+              - if:
+                  condition:
+                    lambda: "return x == 0;"
+                  then:
+                    - homeassistant.service:
+                        service: light.turn_off
+                        data:
+                          entity_id: ${quoteYaml(entity.entityids[0])}
+                  else:
+                    - homeassistant.service:
+                        service: light.turn_on
+                        data:
+                          entity_id: ${quoteYaml(entity.entityids[0])}
+                        data_template:
+                          brightness_pct: "{{ brightness }}"
+                        variables:
+                          brightness: "return x;"`;
 }
 
 function renderLightTileWidget(entity) {

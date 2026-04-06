@@ -16,6 +16,7 @@ import {
   LIGHT_TILE_ICON_POSITION_DEFAULT,
   LIGHT_STYLE_ICON,
   LIGHT_STYLE_TILE,
+  LIGHT_STYLE_SLIDER,
   normalizeLightTileIconPosition,
   SWITCH_BUTTON_STYLE_HEIGHT,
   SWITCH_STYLE_BUTTON,
@@ -138,7 +139,7 @@ export function generateSpecYaml(state) {
       if (normalizeIconSource(entity.props.icon)) {
         lines.push(`      icon: ${quoteYaml(entity.props.icon)}`);
       }
-      if (normalizeStyle(entity.type, entity.props.style) === LIGHT_STYLE_TILE) {
+      if (normalizeStyle(entity.type, entity.props.style) === LIGHT_STYLE_TILE || normalizeStyle(entity.type, entity.props.style) === LIGHT_STYLE_SLIDER) {
         lines.push(`      tile_icon_position: ${quoteYaml(normalizeLightTileIconPosition(entity.props.tile_icon_position))}`);
       }
     }
@@ -377,7 +378,9 @@ export function normalizeStyle(type, value) {
     return value === SWITCH_STYLE_BUTTON ? SWITCH_STYLE_BUTTON : SWITCH_STYLE_TOGGLE;
   }
   if (type === "light") {
-    return value === LIGHT_STYLE_TILE ? LIGHT_STYLE_TILE : LIGHT_STYLE_ICON;
+    if (value === LIGHT_STYLE_TILE) return LIGHT_STYLE_TILE;
+    if (value === LIGHT_STYLE_SLIDER) return LIGHT_STYLE_SLIDER;
+    return LIGHT_STYLE_ICON;
   }
   return THERMO_HYGROMETER_STYLE_COMPACT;
 }
@@ -401,7 +404,9 @@ export function defaultWidthForType(type, style) {
     return DEFAULT_THERMO_WIDTH;
   }
   if (type === "light") {
-    return style === LIGHT_STYLE_TILE ? 120 : DEFAULT_LIGHT_WIDTH;
+    if (style === LIGHT_STYLE_TILE) return 120;
+    if (style === LIGHT_STYLE_SLIDER) return 220;
+    return DEFAULT_LIGHT_WIDTH;
   }
   return DEFAULT_WIDTH;
 }
@@ -411,7 +416,9 @@ export function defaultHeightForType(type, style = SWITCH_STYLE_TOGGLE) {
     return DEFAULT_THERMO_HEIGHT;
   }
   if (type === "light") {
-    return style === LIGHT_STYLE_TILE ? 120 : DEFAULT_LIGHT_HEIGHT;
+    if (style === LIGHT_STYLE_TILE) return 120;
+    if (style === LIGHT_STYLE_SLIDER) return 112;
+    return DEFAULT_LIGHT_HEIGHT;
   }
   return style === SWITCH_STYLE_BUTTON ? SWITCH_BUTTON_STYLE_HEIGHT : DEFAULT_HEIGHT;
 }
@@ -421,7 +428,9 @@ export function minWidthForType(type, style) {
     return 180;
   }
   if (type === "light") {
-    return style === LIGHT_STYLE_TILE ? 80 : 48; // Minimum touch target size
+    if (style === LIGHT_STYLE_TILE) return 80;
+    if (style === LIGHT_STYLE_SLIDER) return 180;
+    return 48; // Minimum touch target size
   }
   return 150;
 }
@@ -431,6 +440,7 @@ export function minHeightForType(type, style = SWITCH_STYLE_TOGGLE) {
     return DEFAULT_THERMO_HEIGHT;
   }
   if (type === "light") {
+    if (style === LIGHT_STYLE_SLIDER) return 80;
     return 48;
   }
   return style === SWITCH_STYLE_BUTTON ? SWITCH_BUTTON_STYLE_HEIGHT : 56;

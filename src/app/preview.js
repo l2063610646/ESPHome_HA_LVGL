@@ -9,6 +9,7 @@ import {
   LIGHT_TILE_ICON_POSITION_OPTIONS,
   LIGHT_STYLE_ICON,
   LIGHT_STYLE_TILE,
+  LIGHT_STYLE_SLIDER,
   LIGHT_TILE_ICON_BUBBLE_OPACITY,
   SWITCH_BUTTON_HEIGHT,
   SWITCH_STYLE_BUTTON,
@@ -158,7 +159,7 @@ export function renderInspector(entity, elements) {
   switchStyleFields.classList.toggle("hidden", false);
   thermoIconFields.classList.toggle("hidden", entity.type !== "thermo_hygrometer");
   lightIconFields.classList.toggle("hidden", entity.type !== "light");
-  lightTilePositionFields.classList.toggle("hidden", !(entity.type === "light" && entity.props.style === LIGHT_STYLE_TILE));
+  lightTilePositionFields.classList.toggle("hidden", !(entity.type === "light" && (entity.props.style === LIGHT_STYLE_TILE || entity.props.style === LIGHT_STYLE_SLIDER)));
   rebuildStyleOptions(fieldStyle, entity.type);
   rebuildLightTilePositionOptions(fieldLightTileIconPosition);
   fieldType.value = entity.type;
@@ -305,6 +306,56 @@ function renderLightPreview(entity) {
     applyTilePlacement(stateLabel, layout.state);
 
     group.append(iconBubble, titleLabel, stateLabel);
+  } else if (entity.props.style === LIGHT_STYLE_SLIDER) {
+    group.className = "light-widget-group slider off";
+
+    const topRow = document.createElement("div");
+    topRow.className = "light-slider-top-row";
+    
+    const iconBubble = document.createElement("div");
+    iconBubble.className = "light-tile-icon-bubble";
+    iconBubble.style.backgroundColor = `rgba(255, 255, 255, ${LIGHT_TILE_ICON_BUBBLE_OPACITY / 100})`;
+    iconBubble.style.position = "static";
+    
+    const icon = document.createElement("img");
+    icon.className = "light-tile-icon";
+    icon.src = resolvePreviewImageSource(entity.props.icon);
+    icon.alt = "Light";
+    icon.addEventListener("error", () => {
+      if (icon.dataset.fallbackApplied === "true") return;
+      icon.dataset.fallbackApplied = "true";
+      icon.src = resolvePreviewImageSource(LIGHT_ICON_PATHS.on);
+    });
+    iconBubble.append(icon);
+
+    const infoBlock = document.createElement("div");
+    infoBlock.className = "light-slider-info";
+    
+    const titleLabel = document.createElement("div");
+    titleLabel.className = "light-slider-title";
+    titleLabel.textContent = entity.props.title;
+
+    const stateLabel = document.createElement("div");
+    stateLabel.className = "light-slider-state";
+    stateLabel.textContent = "30%";
+
+    infoBlock.append(titleLabel, stateLabel);
+    topRow.append(iconBubble, infoBlock);
+
+    const sliderTrack = document.createElement("div");
+    sliderTrack.className = "light-slider-track";
+    
+    const sliderFill = document.createElement("div");
+    sliderFill.className = "light-slider-fill";
+    sliderFill.style.width = "30%";
+
+    const sliderKnob = document.createElement("div");
+    sliderKnob.className = "light-slider-knob";
+    
+    sliderFill.append(sliderKnob);
+    sliderTrack.append(sliderFill);
+
+    group.append(topRow, sliderTrack);
   } else {
     const icon = document.createElement("img");
     icon.className = "light-widget-icon";

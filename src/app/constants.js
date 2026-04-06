@@ -17,6 +17,7 @@ export const DEFAULT_THERMO_HEIGHT = 112;
 export const THERMO_VALUE_BOX_HEIGHT = 80;
 export const LIGHT_STYLE_ICON = "icon";
 export const LIGHT_STYLE_TILE = "tile";
+export const LIGHT_STYLE_SLIDER = "slider";
 export const LIGHT_TILE_ICON_BUBBLE_OPACITY = 40;
 export const LIGHT_TILE_ICON_POSITION_TOP_LEFT = "top-left";
 export const LIGHT_TILE_ICON_POSITION_TOP_RIGHT = "top-right";
@@ -105,6 +106,7 @@ export const ENTITY_CAPABILITIES = {
     styleOptions: [
       { value: LIGHT_STYLE_ICON, label: "icon" },
       { value: LIGHT_STYLE_TILE, label: "tile" },
+      { value: LIGHT_STYLE_SLIDER, label: "slider" },
     ],
     createEntity(index) {
       return {
