@@ -688,6 +688,22 @@ code {
   transition: width 0.2s ease-out;
 }
 
+.light-widget-group.slider.is-off .light-tile-icon-bubble {
+  background: #ececec !important;
+}
+
+.light-widget-group.slider.is-off .light-tile-icon-bubble img {
+  filter: grayscale(100%) opacity(60%) !important;
+}
+
+.light-widget-group.slider.is-off .light-slider-track {
+  background: #ebebeb !important;
+}
+
+.light-widget-group.slider.is-off .light-slider-fill {
+  background: #9e9e9e !important;
+}
+
 .light-slider-knob {
   position: absolute;
   right: 6px;

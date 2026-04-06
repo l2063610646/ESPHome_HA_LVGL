@@ -522,6 +522,19 @@ function renderImageBlock(entities) {
           ];
         }
 
+        if (entity.type === "light" && entity.props.style === LIGHT_STYLE_SLIDER) {
+          return [
+            `- file: ${quoteYaml(entity.props.icon || LIGHT_ICON_PATHS.on)}
+  id: ${getLightImageId(entity)}_on
+  type: rgb565
+  transparency: alpha_channel`,
+            `- file: ${quoteYaml(entity.props.icon_off || "mdi:lightbulb-off")}
+  id: ${getLightImageId(entity)}_off
+  type: rgb565
+  transparency: alpha_channel`
+          ];
+        }
+
         return [
           `- file: ${quoteYaml(entity.props.icon || LIGHT_ICON_PATHS.on)}
   id: ${getLightImageId(entity)}
@@ -581,7 +594,32 @@ function renderLightStateTextSensorComponent(entity) {
               value: 0
           - lvgl.label.update:
               id: ${getLightStateLabelId(entity)}
-              text: "OFF"`;
+              text: "OFF"
+          - lvgl.image.update:
+              id: ${getWidgetId(entity, 0)}_icon
+              src: ${getLightImageId(entity)}_off
+          - lvgl.obj.update:
+              id: ${getWidgetId(entity, 0)}_bubble
+              bg_color: 0xECECEC
+          - lvgl.obj.update:
+              id: ${getWidgetId(entity, 0)}_wrapper
+              bg_color: 0xEBEBEB
+          - lvgl.obj.update:
+              id: ${getWidgetId(entity, 0)}_orange_fill
+              bg_color: 0x9E9E9E
+        else:
+          - lvgl.image.update:
+              id: ${getWidgetId(entity, 0)}_icon
+              src: ${getLightImageId(entity)}_on
+          - lvgl.obj.update:
+              id: ${getWidgetId(entity, 0)}_bubble
+              bg_color: 0xFEEDBD
+          - lvgl.obj.update:
+              id: ${getWidgetId(entity, 0)}_wrapper
+              bg_color: 0xFEEDBD
+          - lvgl.obj.update:
+              id: ${getWidgetId(entity, 0)}_orange_fill
+              bg_color: 0xFDBB13`;
   }
 
   return `- platform: homeassistant
@@ -898,6 +936,7 @@ function renderLightSliderWidget(entity) {
             flex_align_cross: CENTER
           widgets:
             - obj:
+                id: ${getWidgetId(entity, 0)}_bubble
                 width: 44
                 height: 44
                 radius: 22
@@ -910,7 +949,8 @@ function renderLightSliderWidget(entity) {
                   flex_align_cross: CENTER
                 widgets:
                   - image:
-                      src: ${iconId}
+                      id: ${getWidgetId(entity, 0)}_icon
+                      src: ${iconId}_on
             - obj:
                 width: SIZE_CONTENT
                 height: SIZE_CONTENT
