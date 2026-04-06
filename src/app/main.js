@@ -83,10 +83,12 @@ const elements = {
   thermoIconFields: document.getElementById("thermo-icon-fields"),
   lightIconFields: document.getElementById("light-icon-fields"),
   lightTilePositionFields: document.getElementById("light-tile-position-fields"),
+  lightSliderFields: document.getElementById("light-slider-fields"),
   fieldTempIcon: document.getElementById("field-temp-icon"),
   fieldHumIcon: document.getElementById("field-hum-icon"),
   fieldLightIcon: document.getElementById("field-light-icon"),
   fieldLightTileIconPosition: document.getElementById("field-light-tile-icon-position"),
+  fieldColorTemp: document.getElementById("field-color-temp"),
   tempIconPreviewImg: document.getElementById("temp-icon-preview-img"),
   humIconPreviewImg: document.getElementById("hum-icon-preview-img"),
   tempIconPreviewFallback: document.getElementById("temp-icon-preview-fallback"),
@@ -224,6 +226,7 @@ elements.deleteBtn.addEventListener("click", () => {
   elements.fieldY,
   elements.fieldWidth,
   elements.fieldHeight,
+  elements.fieldColorTemp,
 ].forEach((input) => {
   input.addEventListener("input", handleInspectorChange);
   input.addEventListener("change", handleInspectorCommit);
@@ -338,7 +341,7 @@ elements.canvas.addEventListener("pointermove", (event) => {
     );
     entity.props.height = clamp(
       Math.round(state.drag.startHeight + (position.y - state.drag.startY)),
-      minHeightForType(entity.type, entity.props.style),
+      minHeightForType(entity.type, entity.props.style, entity.props),
       state.canvasHeight - entity.props.y
     );
     setStatus(`Resizing ${entity.props.title}`);
@@ -401,7 +404,7 @@ function handleInspectorChange() {
     entity.entityids = draft.entityids.map((fallback, index) => entity.entityids[index] || fallback);
     entity.props.width = Math.max(entity.props.width, draft.props.width);
     entity.props.style = normalizeStyle(nextType, draft.props.style);
-    entity.props.height = Math.max(entity.props.height, minHeightForType(nextType, entity.props.style));
+    entity.props.height = Math.max(entity.props.height, minHeightForType(nextType, entity.props.style, entity.props));
   }
 
   entity.props.style = normalizeStyle(entity.type, elements.fieldStyle.value || entity.props.style);
@@ -425,6 +428,8 @@ function handleInspectorChange() {
   if (entity.type === "light") {
     entity.props.icon = normalizeIconSource(elements.fieldLightIcon.value);
     entity.props.tile_icon_position = elements.fieldLightTileIconPosition.value.trim() || entity.props.tile_icon_position;
+    entity.props.color_temp = elements.fieldColorTemp.checked;
+    entity.props.height = Math.max(entity.props.height, minHeightForType(entity.type, entity.props.style, entity.props));
   }
 
   const pendingWidth = readPendingNumber(elements.fieldWidth.value);
@@ -436,7 +441,7 @@ function handleInspectorChange() {
   if (pendingHeight !== null) {
     entity.props.height = clamp(
       pendingHeight,
-      minHeightForType(entity.type, entity.props.style),
+      minHeightForType(entity.type, entity.props.style, entity.props),
       state.canvasHeight
     );
   }
@@ -477,6 +482,7 @@ function handleInspectorCommit() {
   if (entity.type === "light") {
     entity.props.icon = normalizeIconSource(elements.fieldLightIcon.value);
     entity.props.tile_icon_position = elements.fieldLightTileIconPosition.value.trim() || entity.props.tile_icon_position;
+    entity.props.color_temp = elements.fieldColorTemp.checked;
   }
   entity.props.width = clampNumber(
     elements.fieldWidth.value,

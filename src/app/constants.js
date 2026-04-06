@@ -121,6 +121,7 @@ export const ENTITY_CAPABILITIES = {
           style: LIGHT_STYLE_ICON,
           icon: LIGHT_ICON_PATHS.on,
           tile_icon_position: LIGHT_TILE_ICON_POSITION_DEFAULT,
+          color_temp: false,
         },
       };
     },

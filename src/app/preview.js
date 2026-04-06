@@ -144,6 +144,8 @@ export function renderInspector(entity, elements) {
     fieldHumIcon,
     fieldLightIcon,
     fieldLightTileIconPosition,
+    lightSliderFields,
+    fieldColorTemp,
   } = elements;
 
   const hasEntity = Boolean(entity);
@@ -160,6 +162,7 @@ export function renderInspector(entity, elements) {
   thermoIconFields.classList.toggle("hidden", entity.type !== "thermo_hygrometer");
   lightIconFields.classList.toggle("hidden", entity.type !== "light");
   lightTilePositionFields.classList.toggle("hidden", !(entity.type === "light" && (entity.props.style === LIGHT_STYLE_TILE || entity.props.style === LIGHT_STYLE_SLIDER)));
+  lightSliderFields.classList.toggle("hidden", !(entity.type === "light" && entity.props.style === LIGHT_STYLE_SLIDER));
   rebuildStyleOptions(fieldStyle, entity.type);
   rebuildLightTilePositionOptions(fieldLightTileIconPosition);
   fieldType.value = entity.type;
@@ -177,6 +180,7 @@ export function renderInspector(entity, elements) {
   fieldHumIcon.value = entity.props.hum_icon ?? "";
   fieldLightIcon.value = entity.props.icon ?? "";
   fieldLightTileIconPosition.value = entity.props.tile_icon_position ?? LIGHT_TILE_ICON_POSITION_DEFAULT;
+  fieldColorTemp.checked = entity.props.color_temp ?? false;
   updateThermoIconInspectorPreview(elements);
   updateLightIconInspectorPreview(elements);
 }
@@ -307,7 +311,7 @@ function renderLightPreview(entity) {
 
     group.append(iconBubble, titleLabel, stateLabel);
   } else if (entity.props.style === LIGHT_STYLE_SLIDER) {
-    group.className = "light-widget-group slider off";
+    group.className = `light-widget-group slider ${entity.props.color_temp ? "has-ct" : ""} off`;
 
     const topRow = document.createElement("div");
     topRow.className = "light-slider-top-row";
@@ -356,6 +360,19 @@ function renderLightPreview(entity) {
     sliderTrack.append(sliderFill);
 
     group.append(topRow, sliderTrack);
+
+    if (entity.props.color_temp) {
+      const ctTrack = document.createElement("div");
+      ctTrack.className = "light-slider-track ct-track";
+      const ctFill = document.createElement("div");
+      ctFill.className = "light-slider-fill ct-fill";
+      ctFill.style.width = "50%";
+      const ctKnob = document.createElement("div");
+      ctKnob.className = "light-slider-knob";
+      ctFill.append(ctKnob);
+      ctTrack.append(ctFill);
+      group.append(ctTrack);
+    }
   } else {
     const icon = document.createElement("img");
     icon.className = "light-widget-icon";

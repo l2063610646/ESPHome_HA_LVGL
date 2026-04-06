@@ -440,7 +440,8 @@ function renderSwitchBlock(entities) {
 function renderSensorBlock(entities) {
   return entities
       .filter((entity) => entity.type === "light" && entity.props.style === LIGHT_STYLE_SLIDER)
-      .flatMap((entity) => [
+      .flatMap((entity) => {
+        const blocks = [
         `- platform: homeassistant
   id: ha_brightness_${getEntitySlug(entity)}
   entity_id: ${quoteYaml(entity.entityids[0])}
@@ -480,7 +481,34 @@ function renderSensorBlock(entities) {
           }
           sprintf(buf, "%.0f%%", (x / 255.0) * 100.0);
           return buf;`
-      ])
+        ];
+
+        if (entity.props.color_temp) {
+          blocks.push(`- platform: homeassistant
+  id: ha_color_temp_${getEntitySlug(entity)}
+  entity_id: ${quoteYaml(entity.entityids[0])}
+  attribute: color_temp
+  on_value:
+    - lvgl.slider.update:
+        id: ${getWidgetId(entity, 0)}_ct
+        value: !lambda |-
+          return (int)(std::isnan(x) ? 153.0 : x);
+    - lvgl.obj.update:
+        id: ${getWidgetId(entity, 0)}_ct_pill
+        x: !lambda |-
+          float val = std::isnan(x) ? 153.0 : x;
+          float slider_val = ((val - 153.0) / (500.0 - 153.0)) * 100.0;
+          auto wrapper = id(${getWidgetId(entity, 0)}_ct_wrapper);
+          int w = lv_obj_get_width(wrapper);
+          int fill_w = (int)((w * slider_val) / 100.0f);
+          if(fill_w < 0) fill_w = 0;
+          if(fill_w > w) fill_w = w;
+          int pill_x = fill_w - 10;
+          return pill_x < 0 ? 0 : pill_x;`);
+        }
+        
+        return blocks;
+      })
       .join("\n");
 }
 
@@ -574,6 +602,40 @@ function renderTextSensorComponent(entity, index) {
 
 function renderLightStateTextSensorComponent(entity) {
   if (entity.props.style === LIGHT_STYLE_SLIDER) {
+    let offStateYaml = `          - lvgl.obj.update:
+              id: ${getWidgetId(entity, 0)}_wrapper
+              bg_color: 0xEBEBEB
+          - lvgl.obj.update:
+              id: ${getWidgetId(entity, 0)}_orange_fill
+              bg_color: 0x9E9E9E`;
+              
+    let onStateYaml = `          - lvgl.obj.update:
+              id: ${getWidgetId(entity, 0)}_wrapper
+              bg_color: 0xFEEDBD
+          - lvgl.obj.update:
+              id: ${getWidgetId(entity, 0)}_orange_fill
+              bg_color: 0xFDBB13`;
+
+    if (entity.props.color_temp) {
+      offStateYaml += `
+          - lvgl.obj.update:
+              id: ${getWidgetId(entity, 0)}_ct_wrapper
+              bg_color: 0xEBEBEB
+              bg_grad_color: 0xEBEBEB
+          - lvgl.obj.update:
+              id: ${getWidgetId(entity, 0)}_ct_pill
+              bg_color: 0x9E9E9E`;
+              
+      onStateYaml += `
+          - lvgl.obj.update:
+              id: ${getWidgetId(entity, 0)}_ct_wrapper
+              bg_color: 0x91C1FF
+              bg_grad_color: 0xFFD699
+          - lvgl.obj.update:
+              id: ${getWidgetId(entity, 0)}_ct_pill
+              bg_color: 0xFFFFFF`;
+    }
+
     return `- platform: homeassistant
   id: ${getHaTextSensorId(entity, 0)}
   entity_id: ${quoteYaml(entity.entityids[0])}
@@ -595,12 +657,7 @@ function renderLightStateTextSensorComponent(entity) {
           - lvgl.obj.update:
               id: ${getWidgetId(entity, 0)}_bubble
               bg_color: 0xECECEC
-          - lvgl.obj.update:
-              id: ${getWidgetId(entity, 0)}_wrapper
-              bg_color: 0xEBEBEB
-          - lvgl.obj.update:
-              id: ${getWidgetId(entity, 0)}_orange_fill
-              bg_color: 0x9E9E9E
+${offStateYaml}
         else:
           - lvgl.label.update:
               id: ${getLightStateLabelId(entity)}
@@ -621,12 +678,7 @@ function renderLightStateTextSensorComponent(entity) {
           - lvgl.obj.update:
               id: ${getWidgetId(entity, 0)}_bubble
               bg_color: 0xFEEDBD
-          - lvgl.obj.update:
-              id: ${getWidgetId(entity, 0)}_wrapper
-              bg_color: 0xFEEDBD
-          - lvgl.obj.update:
-              id: ${getWidgetId(entity, 0)}_orange_fill
-              bg_color: 0xFDBB13`;
+${onStateYaml}`;
   }
 
   return `- platform: homeassistant
@@ -908,7 +960,7 @@ function renderLightSliderWidget(entity) {
   const stateId = getLightStateLabelId(entity);
   const haId = getHaTextSensorId(entity, 0);
 
-  return `- obj:
+  let yaml = `- obj:
     id: ${getContainerId(entity)}
     x: ${entity.props.x}
     y: ${entity.props.y}
@@ -989,6 +1041,7 @@ function renderLightSliderWidget(entity) {
       - obj:
           id: ${getWidgetId(entity, 0)}_wrapper
           width: 100%
+          height: 38
           flex_grow: 1
           bg_color: 0xFEEDBD
           radius: 12
@@ -1068,14 +1121,77 @@ function renderLightSliderWidget(entity) {
                               data:
                                 entity_id: ${quoteYaml(entity.entityids[0])}
                         else:
-                          - homeassistant.service:
-                              service: light.turn_on
-                              data:
-                                entity_id: ${quoteYaml(entity.entityids[0])}
-                              data_template:
-                                brightness_pct: "{{ brightness }}"
-                              variables:
-                                brightness: "return x;"`;
+                              - homeassistant.service:
+                                  service: light.turn_on
+                                  data:
+                                    entity_id: ${quoteYaml(entity.entityids[0])}
+                                    brightness_pct: !lambda "return (int)x;"`;
+
+  if (entity.props.color_temp) {
+    yaml += `
+      - obj:
+          id: ${getWidgetId(entity, 0)}_ct_wrapper
+          width: 100%
+          height: 38
+          flex_grow: 1
+          bg_color: 0x91C1FF
+          bg_grad_color: 0xFFD699
+          bg_grad_dir: HOR
+          radius: 12
+          border_width: 0
+          pad_all: 0
+          scrollbar_mode: "OFF"
+          widgets:
+            - obj:
+                id: ${getWidgetId(entity, 0)}_ct_pill
+                width: 4
+                height: 16
+                radius: 2
+                bg_color: 0xFFFFFF
+                align: LEFT_MID
+                x: 0
+                border_width: 0
+                scrollbar_mode: "OFF"
+            - slider:
+                id: ${getWidgetId(entity, 0)}_ct
+                width: 100%
+                height: 100%
+                min_value: 153
+                max_value: 500
+                radius: 12
+                bg_opa: TRANSP
+                scrollbar_mode: "OFF"
+                indicator:
+                  bg_opa: TRANSP
+                knob:
+                  bg_opa: TRANSP
+                  border_width: 0
+                  shadow_width: 0
+                on_change:
+                  then:
+                    - logger.log: "Color Temp Changed"
+                    - lvgl.obj.update:
+                        id: ${getWidgetId(entity, 0)}_ct_pill
+                        x: !lambda |-
+                          auto wrapper = id(${getWidgetId(entity, 0)}_ct_wrapper);
+                          int w = lv_obj_get_width(wrapper);
+                          float val = x - 153.0f;
+                          float max_val = 500.0f - 153.0f;
+                          float pct = val / max_val;
+                          int pill_x = (int)(w * pct) - 10;
+                          return (pill_x < 0) ? 0 : pill_x;
+                    - homeassistant.service:
+                        service: light.turn_on
+                        data:
+                          entity_id: ${quoteYaml(entity.entityids[0])}
+                        data_template:
+                          color_temp: "{{ ct }}"
+                        variables:
+                          ct: !lambda "return (int)x;"
+                    - logger.log: "Color Temp Sent"`;
+  }
+
+  return yaml;
 }
 
 function renderLightTileWidget(entity) {

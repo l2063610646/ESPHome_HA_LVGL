@@ -142,6 +142,9 @@ export function generateSpecYaml(state) {
       if (normalizeStyle(entity.type, entity.props.style) === LIGHT_STYLE_TILE || normalizeStyle(entity.type, entity.props.style) === LIGHT_STYLE_SLIDER) {
         lines.push(`      tile_icon_position: ${quoteYaml(normalizeLightTileIconPosition(entity.props.tile_icon_position))}`);
       }
+      if (entity.props.color_temp) {
+        lines.push(`      color_temp: true`);
+      }
     }
   });
   return `${lines.join("\n")}\n`;
@@ -323,6 +326,7 @@ export function normalizeEntity(entity, canvasWidth = BOARD_CONFIGS.nextion_35.w
       tile_icon_position: normalizeLightTileIconPosition(
         props.tile_icon_position || props.icon_position || props.icon_align || LIGHT_TILE_ICON_POSITION_DEFAULT
       ),
+      color_temp: !!(props.color_temp ?? props.colorTemp ?? false),
     },
   };
 }
@@ -411,13 +415,13 @@ export function defaultWidthForType(type, style) {
   return DEFAULT_WIDTH;
 }
 
-export function defaultHeightForType(type, style = SWITCH_STYLE_TOGGLE) {
+export function defaultHeightForType(type, style = SWITCH_STYLE_TOGGLE, props = {}) {
   if (type === "thermo_hygrometer") {
     return DEFAULT_THERMO_HEIGHT;
   }
   if (type === "light") {
     if (style === LIGHT_STYLE_TILE) return 120;
-    if (style === LIGHT_STYLE_SLIDER) return 112;
+    if (style === LIGHT_STYLE_SLIDER) return props.color_temp ? 152 : 112;
     return DEFAULT_LIGHT_HEIGHT;
   }
   return style === SWITCH_STYLE_BUTTON ? SWITCH_BUTTON_STYLE_HEIGHT : DEFAULT_HEIGHT;
@@ -435,12 +439,12 @@ export function minWidthForType(type, style) {
   return 150;
 }
 
-export function minHeightForType(type, style = SWITCH_STYLE_TOGGLE) {
+export function minHeightForType(type, style = SWITCH_STYLE_TOGGLE, props = {}) {
   if (type === "thermo_hygrometer") {
     return DEFAULT_THERMO_HEIGHT;
   }
   if (type === "light") {
-    if (style === LIGHT_STYLE_SLIDER) return 120;
+    if (style === LIGHT_STYLE_SLIDER) return props.color_temp ? 110 : 80;
     return 48;
   }
   return style === SWITCH_STYLE_BUTTON ? SWITCH_BUTTON_STYLE_HEIGHT : 56;
