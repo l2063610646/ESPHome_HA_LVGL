@@ -449,15 +449,11 @@ function renderSensorBlock(entities) {
     - lvgl.slider.update:
         id: ${getWidgetId(entity, 0)}
         value: !lambda |-
-          if (id(${getHaTextSensorId(entity, 0)}).state != "on") return 0;
           return std::isnan(x) ? 0 : (x / 255.0) * 100.0;
     - lvgl.obj.update:
         id: ${getWidgetId(entity, 0)}_orange_fill
         width: !lambda |-
-          float val = 0;
-          if (id(${getHaTextSensorId(entity, 0)}).state == "on" && !std::isnan(x)) {
-            val = (x / 255.0) * 100.0;
-          }
+          float val = std::isnan(x) ? 0 : (x / 255.0) * 100.0;
           auto wrapper = id(${getWidgetId(entity, 0)}_wrapper);
           int w = lv_obj_get_width(wrapper);
           int fill_w = (int)((w * val) / 100.0f);
@@ -467,10 +463,7 @@ function renderSensorBlock(entities) {
     - lvgl.obj.update:
         id: ${getWidgetId(entity, 0)}_pill
         x: !lambda |-
-          float val = 0;
-          if (id(${getHaTextSensorId(entity, 0)}).state == "on" && !std::isnan(x)) {
-            val = (x / 255.0) * 100.0;
-          }
+          float val = std::isnan(x) ? 0 : (x / 255.0) * 100.0;
           auto wrapper = id(${getWidgetId(entity, 0)}_wrapper);
           int w = lv_obj_get_width(wrapper);
           int fill_w = (int)((w * val) / 100.0f);
@@ -589,9 +582,6 @@ function renderLightStateTextSensorComponent(entity) {
         condition:
           lambda: "return x == \\"off\\";"
         then:
-          - lvgl.slider.update:
-              id: ${getWidgetId(entity, 0)}
-              value: 0
           - lvgl.label.update:
               id: ${getLightStateLabelId(entity)}
               text: "OFF"
@@ -608,6 +598,15 @@ function renderLightStateTextSensorComponent(entity) {
               id: ${getWidgetId(entity, 0)}_orange_fill
               bg_color: 0x9E9E9E
         else:
+          - lvgl.label.update:
+              id: ${getLightStateLabelId(entity)}
+              text: !lambda |-
+                auto slider = id(${getWidgetId(entity, 0)});
+                int slider_val = lv_slider_get_value(slider);
+                static char buf[10];
+                if (slider_val == 0) return "OFF";
+                sprintf(buf, "%.0f%%", (float)slider_val);
+                return buf;
           - lvgl.image.update:
               id: ${getWidgetId(entity, 0)}_icon
               src: ${getLightImageId(entity)}_on
@@ -934,6 +933,11 @@ function renderLightSliderWidget(entity) {
             type: FLEX
             flex_flow: ROW
             flex_align_cross: CENTER
+          on_click:
+            - homeassistant.service:
+                action: light.toggle
+                data:
+                  entity_id: ${quoteYaml(entity.entityids[0])}
           widgets:
             - obj:
                 id: ${getWidgetId(entity, 0)}_bubble
@@ -1021,7 +1025,7 @@ function renderLightSliderWidget(entity) {
                         id: ${stateId}
                         text: !lambda |-
                           static char buf[10];
-                          if (x == 0) return "OFF";
+                          if (id(${getHaTextSensorId(entity, 0)}).state != "on" || x == 0) return "OFF";
                           sprintf(buf, "%.0f%%", (float)x);
                           return buf;
                     - lvgl.obj.update:
