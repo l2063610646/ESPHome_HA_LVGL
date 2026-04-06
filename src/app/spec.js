@@ -440,7 +440,7 @@ export function minHeightForType(type, style = SWITCH_STYLE_TOGGLE) {
     return DEFAULT_THERMO_HEIGHT;
   }
   if (type === "light") {
-    if (style === LIGHT_STYLE_SLIDER) return 80;
+    if (style === LIGHT_STYLE_SLIDER) return 120;
     return 48;
   }
   return style === SWITCH_STYLE_BUTTON ? SWITCH_BUTTON_STYLE_HEIGHT : 56;

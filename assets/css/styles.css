@@ -643,8 +643,8 @@ code {
   flex-shrink: 0;
 }
 
-.light-widget-group.slider.on .light-tile-icon-bubble {
-  background: #fac448 !important;
+.light-widget-group.slider .light-tile-icon-bubble img {
+  filter: invert(79%) sepia(48%) saturate(3478%) hue-rotate(344deg) brightness(104%) contrast(98%) !important;
 }
 
 .light-slider-info {
@@ -693,7 +693,7 @@ code {
 }
 
 .light-widget-group.slider.is-off .light-tile-icon-bubble img {
-  filter: grayscale(100%) opacity(60%) !important;
+  filter: invert(69%) sepia(5%) saturate(16%) hue-rotate(314deg) brightness(89%) contrast(85%) !important;
 }
 
 .light-widget-group.slider.is-off .light-slider-track {
