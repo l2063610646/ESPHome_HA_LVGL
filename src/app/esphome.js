@@ -517,14 +517,14 @@ function renderImageBlock(entities) {
 
         if (entity.type === "light" && entity.props.style === LIGHT_STYLE_SLIDER) {
           return [
-            `- file: ${quoteYaml(entity.props.icon || LIGHT_ICON_PATHS.on)}
+            `- file: "mdi:lightbulb"
   id: ${getLightImageId(entity)}_on
-  type: rgb565
-  transparency: alpha_channel`,
-            `- file: ${quoteYaml(entity.props.icon_off || "mdi:lightbulb-off")}
+  type: BINARY
+  transparency: chroma_key`,
+            `- file: "mdi:lightbulb-off"
   id: ${getLightImageId(entity)}_off
-  type: rgb565
-  transparency: alpha_channel`
+  type: BINARY
+  transparency: chroma_key`
           ];
         }
 
@@ -589,6 +589,10 @@ function renderLightStateTextSensorComponent(entity) {
               id: ${getWidgetId(entity, 0)}_icon
               src: ${getLightImageId(entity)}_off
           - lvgl.obj.update:
+              id: ${getWidgetId(entity, 0)}_icon
+              image_recolor: 0x9E9E9E
+              image_recolor_opa: COVER
+          - lvgl.obj.update:
               id: ${getWidgetId(entity, 0)}_bubble
               bg_color: 0xECECEC
           - lvgl.obj.update:
@@ -610,6 +614,10 @@ function renderLightStateTextSensorComponent(entity) {
           - lvgl.image.update:
               id: ${getWidgetId(entity, 0)}_icon
               src: ${getLightImageId(entity)}_on
+          - lvgl.obj.update:
+              id: ${getWidgetId(entity, 0)}_icon
+              image_recolor: 0xFDBB13
+              image_recolor_opa: COVER
           - lvgl.obj.update:
               id: ${getWidgetId(entity, 0)}_bubble
               bg_color: 0xFEEDBD
@@ -955,6 +963,8 @@ function renderLightSliderWidget(entity) {
                   - image:
                       id: ${getWidgetId(entity, 0)}_icon
                       src: ${iconId}_on
+                      image_recolor: 0xFDBB13
+                      image_recolor_opa: COVER
             - obj:
                 width: SIZE_CONTENT
                 height: SIZE_CONTENT
