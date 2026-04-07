@@ -1418,6 +1418,8 @@ function renderLightSliderWidget(entity) {
                           if(fill_w > w) fill_w = w;
                           int pill_x = fill_w - 10;
                           return pill_x < 0 ? 0 : pill_x;
+                on_release:
+                  then:
                     - homeassistant.service:
                         service: light.turn_on
                         data:
@@ -1477,6 +1479,24 @@ function renderLightSliderWidget(entity) {
                           float pct = x / 100.0f;
                           int pill_x = (int)(w * pct) - 10;
                           return (pill_x < 0) ? 0 : pill_x;
+                    - lvgl.obj.update:
+                        id: ${getWidgetId(entity, 0)}_wrapper
+                        bg_color: !lambda |-
+                          float pct = x / 100.0f;
+                          int r = (int)(213 + (255 - 213) * pct);
+                          int g = (int)(213 + (137 - 213) * pct);
+                          int b = (int)(225 + (14 - 225) * pct);
+                          return lv_color_make(r, g, b);
+                    - lvgl.obj.update:
+                        id: ${getWidgetId(entity, 0)}_orange_fill
+                        bg_color: !lambda |-
+                          float pct = x / 100.0f;
+                          int r = (int)(213 + (255 - 213) * pct);
+                          int g = (int)(213 + (137 - 213) * pct);
+                          int b = (int)(225 + (14 - 225) * pct);
+                          return lv_color_make(r, g, b);
+                on_release:
+                  then:
                     - homeassistant.action:
                         action: light.turn_on
                         data:
@@ -1499,23 +1519,7 @@ function renderLightSliderWidget(entity) {
                             float pct = x / 100.0f;
                             if (pct < 0.0f) pct = 0.0f;
                             if (pct > 1.0f) pct = 1.0f;
-                            return (int) (max_kelvin - ((max_kelvin - min_kelvin) * pct) + 0.5f);
-                    - lvgl.obj.update:
-                        id: ${getWidgetId(entity, 0)}_wrapper
-                        bg_color: !lambda |-
-                          float pct = x / 100.0f;
-                          int r = (int)(213 + (255 - 213) * pct);
-                          int g = (int)(213 + (137 - 213) * pct);
-                          int b = (int)(225 + (14 - 225) * pct);
-                          return lv_color_make(r, g, b);
-                    - lvgl.obj.update:
-                        id: ${getWidgetId(entity, 0)}_orange_fill
-                        bg_color: !lambda |-
-                          float pct = x / 100.0f;
-                          int r = (int)(213 + (255 - 213) * pct);
-                          int g = (int)(213 + (137 - 213) * pct);
-                          int b = (int)(225 + (14 - 225) * pct);
-                          return lv_color_make(r, g, b);`;
+                            return (int) (max_kelvin - ((max_kelvin - min_kelvin) * pct) + 0.5f);`;
   }
 
   return yaml;
