@@ -247,6 +247,8 @@ psram:
   speed: 40MHz
 
 logger:
+  baud_rate: 0
+  level: WARN
 
 api:
 
@@ -342,6 +344,7 @@ touchscreen:
     update_interval: 16ms
 
 lvgl:
+  buffer_size: 25%
   default_font: ${UI_FONT_BODY}
   displays:
     - main_display
@@ -387,6 +390,8 @@ psram:
   speed: 40MHz
 
 logger:
+  baud_rate: 0
+  level: WARN
 api:
 ota:
   - platform: esphome
@@ -471,6 +476,7 @@ touchscreen:
     update_interval: 16ms
 
 lvgl:
+  buffer_size: 25%
   default_font: ${UI_FONT_BODY}
   displays:
     - main_display
