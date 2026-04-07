@@ -191,7 +191,8 @@ export function renderInspector(entity, elements) {
   const hasSecondEntity = capability.entityFields.length > 1 && entity.type !== "multi_switch";
   fieldEntityIdRow.classList.toggle("hidden", entity.type === "multi_switch");
   dualFields.classList.toggle("hidden", !hasSecondEntity);
-  switchStyleFields.classList.toggle("hidden", !(entity.type === "switch" || entity.type === "multi_switch"));
+  const showStyle = capability.styleOptions && capability.styleOptions.length > 0;
+  switchStyleFields.classList.toggle("hidden", !showStyle);
   multiSwitchFields.classList.toggle("hidden", entity.type !== "multi_switch");
   thermoIconFields.classList.toggle("hidden", entity.type !== "thermo_hygrometer");
   lightIconFields.classList.toggle("hidden", entity.type !== "light");
@@ -219,7 +220,11 @@ export function renderInspector(entity, elements) {
     input.checked = isMultiSwitchChannelEnabled(entity.props, index);
   });
   if (fieldActiveBgColor) {
-    fieldActiveBgColor.value = yamlColorToHtml(entity.props.active_bg_color || (entity.type === "light" ? "#ef920c" : "#d7e9dd"));
+    const color = entity.props.active_bg_color || (entity.type === "light" ? "#ef920c" : "#d7e9dd");
+    fieldActiveBgColor.value = yamlColorToHtml(color);
+    if (elements.fieldActiveBgColorHex) {
+      elements.fieldActiveBgColorHex.textContent = fieldActiveBgColor.value.toUpperCase();
+    }
   }
   const showActiveColor = entity.type === "multi_switch" || (entity.type === "switch" && entity.props.style === SWITCH_STYLE_BUTTON);
   elements.activeBgColorFields?.classList.toggle("hidden", !showActiveColor);

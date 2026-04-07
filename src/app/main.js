@@ -113,6 +113,10 @@ const elements = {
   multiSwitchTitleInputs: [1, 2, 3, 4].map((index) => document.getElementById(`field-multi-title-${index}`)),
   activeBgColorFields: document.getElementById("active-bg-color-fields"),
   fieldActiveBgColor: document.getElementById("field-active-bg-color"),
+  fieldActiveBgColorHex: document.getElementById("field-active-bg-color-hex"),
+  fieldActiveBgColorCopy: document.getElementById("field-active-bg-color-copy"),
+  screenBgColorHex: document.getElementById("screen-bg-color-hex"),
+  screenBgColorCopy: document.getElementById("screen-bg-color-copy"),
 };
 
 elements.addEntityBtn.addEventListener("click", () => {
@@ -316,6 +320,7 @@ if (elements.screenBgColorInput) {
   elements.screenBgColorInput.addEventListener("input", () => {
     state.screenBgColor = htmlColorToYaml(elements.screenBgColorInput.value);
     updateCanvasAppearance(state.screenBgColor);
+    updateColorHexLabel(elements.screenBgColorInput, elements.screenBgColorHex);
     elements.yamlIo.value = generateSpecYaml(state);
     buildFinalYaml();
     saveStateToCache();
@@ -323,6 +328,14 @@ if (elements.screenBgColorInput) {
     setStatus("Background color updated");
   });
 }
+
+elements.screenBgColorCopy?.addEventListener("click", () => {
+  handleCopyColor(elements.screenBgColorInput.value, elements.screenBgColorCopy);
+});
+
+elements.fieldActiveBgColorCopy?.addEventListener("click", () => {
+  handleCopyColor(elements.fieldActiveBgColor.value, elements.fieldActiveBgColorCopy);
+});
 
 if (elements.screenPalette) {
   elements.screenPalette.querySelectorAll(".palette-swatch").forEach((button) => {
@@ -595,6 +608,7 @@ function handleInspectorCommit() {
   }
   if (elements.fieldActiveBgColor) {
     entity.props.active_bg_color = htmlColorToYaml(elements.fieldActiveBgColor.value);
+    updateColorHexLabel(elements.fieldActiveBgColor, elements.fieldActiveBgColorHex);
   }
   entity.props.width = clampNumber(
     elements.fieldWidth.value,
@@ -751,6 +765,7 @@ function syncFormControls() {
   elements.boardSelect.value = state.board;
   elements.rotationSelect.value = state.rotation.toString();
   elements.screenBgColorInput.value = yamlColorToHtml(state.screenBgColor);
+  updateColorHexLabel(elements.screenBgColorInput, elements.screenBgColorHex);
   elements.deviceNameInput.value = state.deviceName;
   elements.friendlyNameInput.value = state.friendlyName;
   elements.wifiSsidInput.value = state.wifiSsid;
@@ -901,3 +916,23 @@ syncAll(
       ? "Saved config was invalid and has been cleared"
       : "Ready"
 );
+
+function updateColorHexLabel(input, label) {
+  if (!input || !label) return;
+  label.textContent = input.value.toUpperCase();
+}
+
+async function handleCopyColor(color, button) {
+  try {
+    await navigator.clipboard.writeText(color.toUpperCase());
+    button.classList.add("success");
+    const originalSvg = button.innerHTML;
+    button.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><polyline points="20 6 9 17 4 12"></polyline></svg>';
+    setTimeout(() => {
+      button.classList.remove("success");
+      button.innerHTML = originalSvg;
+    }, 2000);
+  } catch (err) {
+    console.error("Failed to copy color: ", err);
+  }
+}

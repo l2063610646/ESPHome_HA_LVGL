@@ -53,7 +53,13 @@
           </label>
           <label class="stack">
             <span>Screen Background</span>
-            <input id="screen-bg-color" type="color" value="#f3efe7" />
+            <div class="color-picker-row">
+              <input id="screen-bg-color" type="color" value="#f3efe7" />
+              <span id="screen-bg-color-hex" class="color-hex-label">#F3EFE7</span>
+              <button id="screen-bg-color-copy" type="button" class="copy-hex-btn" title="Copy HEX">
+                <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+              </button>
+            </div>
           </label>
           <div id="screen-palette" class="palette-grid" aria-label="Background color palette">
             <button type="button" class="palette-swatch" data-color="#f3efe7" style="--swatch:#f3efe7"></button>
@@ -248,7 +254,13 @@
             <div id="active-bg-color-fields" class="hidden">
               <label class="stack">
                 <span>Active Color</span>
-                <input id="field-active-bg-color" type="color" value="#d7e9dd" />
+                <div class="color-picker-row">
+                  <input id="field-active-bg-color" type="color" value="#d7e9dd" />
+                  <span id="field-active-bg-color-hex" class="color-hex-label">#D7E9DD</span>
+                  <button id="field-active-bg-color-copy" type="button" class="copy-hex-btn" title="Copy HEX">
+                    <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                  </button>
+                </div>
               </label>
             </div>
             <div id="thermo-icon-fields" class="hidden">
@@ -281,10 +293,12 @@
               </p>
             </div>
             <div id="light-icon-fields" class="hidden">
-              <label class="stack">
-                <span>Icon</span>
-                <input id="field-light-icon" type="text" placeholder="assets/images/light.png / /abs/light.png / https://... / mdi:lightbulb" />
-              </label>
+              <div id="field-light-icon-row" class="hidden">
+                <label class="stack">
+                  <span>Icon</span>
+                  <input id="field-light-icon" type="text" placeholder="assets/images/light.png / /abs/light.png / https://... / mdi:lightbulb" />
+                </label>
+              </div>
               <div id="light-tile-position-fields" class="hidden">
                 <label class="stack">
                   <span>Tile Icon Position</span>
@@ -302,7 +316,7 @@
                   <span>Support Color Temperature Slider</span>
                 </label>
               </div>
-              <div class="icon-preview-grid">
+              <div class="icon-preview-grid hidden">
                 <div class="icon-preview-card">
                   <span class="icon-preview-label">Icon Preview</span>
                   <div class="icon-preview-box">
