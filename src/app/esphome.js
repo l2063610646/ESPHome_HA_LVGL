@@ -110,6 +110,18 @@ function getLightStateLabelId(entity) {
   return `light_state_${getEntitySlug(entity)}`;
 }
 
+function getLightColorTempSensorId(entity) {
+  return `ha_color_temp_${getEntitySlug(entity)}`;
+}
+
+function getLightMinColorTempSensorId(entity) {
+  return `ha_min_color_temp_${getEntitySlug(entity)}`;
+}
+
+function getLightMaxColorTempSensorId(entity) {
+  return `ha_max_color_temp_${getEntitySlug(entity)}`;
+}
+
 function getMetricCaption(index) {
   return index === 0 ? "Temp" : "Humi";
 }
@@ -485,30 +497,56 @@ function renderSensorBlock(entities) {
 
         if (entity.props.color_temp) {
           blocks.push(`- platform: homeassistant
-  id: ha_color_temp_${getEntitySlug(entity)}
+  id: ${getLightMinColorTempSensorId(entity)}
+  entity_id: ${quoteYaml(entity.entityids[0])}
+  attribute: min_color_temp_kelvin
+
+- platform: homeassistant
+  id: ${getLightMaxColorTempSensorId(entity)}
+  entity_id: ${quoteYaml(entity.entityids[0])}
+  attribute: max_color_temp_kelvin
+
+- platform: homeassistant
+  id: ${getLightColorTempSensorId(entity)}
   entity_id: ${quoteYaml(entity.entityids[0])}
   attribute: color_temp_kelvin
   on_value:
     - lvgl.slider.update:
         id: ${getWidgetId(entity, 0)}_ct
         value: !lambda |-
-          if (std::isnan(x) || x <= 0) {
-            return 153;
+          float min_kelvin = id(${getLightMinColorTempSensorId(entity)}).state;
+          if (std::isnan(min_kelvin) || min_kelvin < 1000.0f) {
+            min_kelvin = 2000.0f;
           }
-          float mired = 1000000.0f / x;
-          if (mired < 153.0f) mired = 153.0f;
-          if (mired > 500.0f) mired = 500.0f;
-          return (int) mired;
+          float max_kelvin = id(${getLightMaxColorTempSensorId(entity)}).state;
+          if (std::isnan(max_kelvin) || max_kelvin < 1000.0f) {
+            max_kelvin = 6500.0f;
+          }
+          if (max_kelvin <= min_kelvin) {
+            max_kelvin = min_kelvin + 1.0f;
+          }
+          float kelvin = std::isnan(x) || x <= 0 ? min_kelvin : x;
+          if (kelvin < min_kelvin) kelvin = min_kelvin;
+          if (kelvin > max_kelvin) kelvin = max_kelvin;
+          return (int) (((max_kelvin - kelvin) / (max_kelvin - min_kelvin)) * 100.0f);
     - lvgl.obj.update:
         id: ${getWidgetId(entity, 0)}_ct_pill
         x: !lambda |-
-          float val = 153.0f;
-          if (!std::isnan(x) && x > 0) {
-            val = 1000000.0f / x;
+          float min_kelvin = id(${getLightMinColorTempSensorId(entity)}).state;
+          if (std::isnan(min_kelvin) || min_kelvin < 1000.0f) {
+            min_kelvin = 2000.0f;
           }
-          if (val < 153.0f) val = 153.0f;
-          if (val > 500.0f) val = 500.0f;
-          float slider_val = ((val - 153.0) / (500.0 - 153.0)) * 100.0;
+          float max_kelvin = id(${getLightMaxColorTempSensorId(entity)}).state;
+          if (std::isnan(max_kelvin) || max_kelvin < 1000.0f) {
+            max_kelvin = 6500.0f;
+          }
+          if (max_kelvin <= min_kelvin) {
+            max_kelvin = min_kelvin + 1.0f;
+          }
+          float kelvin = std::isnan(x) || x <= 0 ? min_kelvin : x;
+          if (kelvin < min_kelvin) kelvin = min_kelvin;
+          if (kelvin > max_kelvin) kelvin = max_kelvin;
+          float slider_val = ((max_kelvin - kelvin) / (max_kelvin - min_kelvin)) * 100.0f;
           auto wrapper = id(${getWidgetId(entity, 0)}_ct_wrapper);
           int w = lv_obj_get_width(wrapper);
           int fill_w = (int)((w * slider_val) / 100.0f);
@@ -1167,8 +1205,8 @@ function renderLightSliderWidget(entity) {
                 id: ${getWidgetId(entity, 0)}_ct
                 width: 100%
                 height: 100%
-                min_value: 153
-                max_value: 500
+                min_value: 0
+                max_value: 100
                 radius: 12
                 bg_opa: TRANSP
                 scrollbar_mode: "OFF"
@@ -1185,9 +1223,7 @@ function renderLightSliderWidget(entity) {
                         x: !lambda |-
                           auto wrapper = id(${getWidgetId(entity, 0)}_ct_wrapper);
                           int w = lv_obj_get_width(wrapper);
-                          float val = x - 153.0f;
-                          float max_val = 500.0f - 153.0f;
-                          float pct = val / max_val;
+                          float pct = x / 100.0f;
                           int pill_x = (int)(w * pct) - 10;
                           return (pill_x < 0) ? 0 : pill_x;
                     - homeassistant.action:
@@ -1198,10 +1234,21 @@ function renderLightSliderWidget(entity) {
                           color_temp_kelvin: "{{ color_temp_kelvin }}"
                         variables:
                           color_temp_kelvin: !lambda |-
-                            int mired = (int) x;
-                            if (mired < 153) mired = 153;
-                            if (mired > 500) mired = 500;
-                            return (int) ((1000000.0f / mired) + 0.5f);`;
+                            float min_kelvin = id(${getLightMinColorTempSensorId(entity)}).state;
+                            if (std::isnan(min_kelvin) || min_kelvin < 1000.0f) {
+                              min_kelvin = 2000.0f;
+                            }
+                            float max_kelvin = id(${getLightMaxColorTempSensorId(entity)}).state;
+                            if (std::isnan(max_kelvin) || max_kelvin < 1000.0f) {
+                              max_kelvin = 6500.0f;
+                            }
+                            if (max_kelvin <= min_kelvin) {
+                              max_kelvin = min_kelvin + 1.0f;
+                            }
+                            float pct = x / 100.0f;
+                            if (pct < 0.0f) pct = 0.0f;
+                            if (pct > 1.0f) pct = 1.0f;
+                            return (int) (max_kelvin - ((max_kelvin - min_kelvin) * pct) + 0.5f);`;
   }
 
   return yaml;
