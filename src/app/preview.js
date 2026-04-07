@@ -235,6 +235,12 @@ export function renderInspector(entity, elements) {
   multiSwitchTitleInputs?.forEach((input, index) => {
     input.value = getMultiSwitchChannelTitle(entity.props, index);
   });
+  if (entity.type === "light") {
+    elements.fieldLightPreviewCtRow?.classList.toggle("hidden", !entity.props.color_temp);
+    if (elements.fieldLightPreviewCt) {
+      elements.fieldLightPreviewCt.value = entity.props.preview_color_temp !== undefined ? entity.props.preview_color_temp : 50;
+    }
+  }
   updateThermoIconInspectorPreview(elements);
   updateLightIconInspectorPreview(elements);
 }
@@ -261,6 +267,19 @@ export function updateLightIconInspectorPreview(elements) {
     elements.fieldLightIcon.value,
     LIGHT_ICON_PATHS.on
   );
+}
+
+export function calculateLightSliderColor(factor) {
+  // factor is 0 (cool) to 1 (warm)
+  // New anchors: Cool (#d5d5e1) to Warm (#ff890e)
+  const cool = { r: 213, g: 213, b: 225 };
+  const warm = { r: 255, g: 137, b: 14 };
+  
+  const r = Math.round(cool.r + (warm.r - cool.r) * factor);
+  const g = Math.round(cool.g + (warm.g - cool.g) * factor);
+  const b = Math.round(cool.b + (warm.b - cool.b) * factor);
+  
+  return `rgb(${r}, ${g}, ${b})`;
 }
 
 function renderSingleSwitchPreview(entity) {
@@ -488,6 +507,10 @@ function renderLightPreview(entity) {
     const sliderFill = document.createElement("div");
     sliderFill.className = "light-slider-fill";
     sliderFill.style.width = "30%";
+
+    const ctFactor = entity.props.preview_color_temp !== undefined ? entity.props.preview_color_temp / 100 : 0.5;
+    const sliderFillColor = calculateLightSliderColor(ctFactor);
+    sliderFill.style.backgroundColor = sliderFillColor;
 
     const sliderKnob = document.createElement("div");
     sliderKnob.className = "light-slider-knob";

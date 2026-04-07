@@ -869,7 +869,7 @@ code {
   flex: 1;
   height: 38px;
   min-height: 12px;
-  background: #feedbd;
+  background: rgba(36, 50, 58, 0.1);
   border-radius: 12px;
   position: relative;
   overflow: hidden;

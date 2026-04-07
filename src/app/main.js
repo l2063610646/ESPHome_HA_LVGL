@@ -115,6 +115,8 @@ const elements = {
   fieldActiveBgColor: document.getElementById("field-active-bg-color"),
   fieldActiveBgColorHex: document.getElementById("field-active-bg-color-hex"),
   fieldActiveBgColorCopy: document.getElementById("field-active-bg-color-copy"),
+  fieldLightPreviewCt: document.getElementById("field-light-preview-ct"),
+  fieldLightPreviewCtRow: document.getElementById("field-light-preview-ct-row"),
   screenBgColorHex: document.getElementById("screen-bg-color-hex"),
   screenBgColorCopy: document.getElementById("screen-bg-color-copy"),
 };
@@ -292,6 +294,7 @@ elements.deleteBtn.addEventListener("click", () => {
   elements.fieldHeight,
   elements.fieldColorTemp,
   elements.fieldActiveBgColor,
+  elements.fieldLightPreviewCt,
   ...elements.multiSwitchEnabledInputs,
   ...elements.multiSwitchEntityInputs,
   ...elements.multiSwitchTitleInputs,
@@ -539,6 +542,7 @@ function handleInspectorChange() {
     entity.props.icon = normalizeIconSource(elements.fieldLightIcon.value);
     entity.props.tile_icon_position = elements.fieldLightTileIconPosition.value.trim() || entity.props.tile_icon_position;
     entity.props.color_temp = elements.fieldColorTemp.checked;
+    entity.props.preview_color_temp = parseInt(elements.fieldLightPreviewCt.value, 10);
     entity.props.height = Math.max(entity.props.height, minHeightForType(entity.type, entity.props.style, entity.props));
   }
 
@@ -605,6 +609,7 @@ function handleInspectorCommit() {
   }
   if (entity.type === "light") {
     entity.props.color_temp = elements.fieldColorTemp.checked;
+    entity.props.preview_color_temp = parseInt(elements.fieldLightPreviewCt.value, 10);
   }
   if (elements.fieldActiveBgColor) {
     entity.props.active_bg_color = htmlColorToYaml(elements.fieldActiveBgColor.value);

@@ -1307,7 +1307,8 @@ function renderLightSliderWidget(entity) {
           width: 100%
           height: 38
           flex_grow: 1
-          bg_color: 0xFEEDBD
+          bg_color: 0x24323A
+          bg_opa: 30%
           radius: 12
           border_width: 0
           pad_all: 0
@@ -1470,7 +1471,23 @@ function renderLightSliderWidget(entity) {
                             float pct = x / 100.0f;
                             if (pct < 0.0f) pct = 0.0f;
                             if (pct > 1.0f) pct = 1.0f;
-                            return (int) (max_kelvin - ((max_kelvin - min_kelvin) * pct) + 0.5f);`;
+                            return (int) (max_kelvin - ((max_kelvin - min_kelvin) * pct) + 0.5f);
+                    - lvgl.obj.update:
+                        id: ${getWidgetId(entity, 0)}_wrapper
+                        bg_color: !lambda |-
+                          float pct = x / 100.0f;
+                          int r = (int)(213 + (255 - 213) * pct);
+                          int g = (int)(213 + (137 - 213) * pct);
+                          int b = (int)(225 + (14 - 225) * pct);
+                          return lv_color_make(r, g, b);
+                    - lvgl.obj.update:
+                        id: ${getWidgetId(entity, 0)}_orange_fill
+                        bg_color: !lambda |-
+                          float pct = x / 100.0f;
+                          int r = (int)(213 + (255 - 213) * pct);
+                          int g = (int)(213 + (137 - 213) * pct);
+                          int b = (int)(225 + (14 - 225) * pct);
+                          return lv_color_make(r, g, b);`;
   }
 
   return yaml;
