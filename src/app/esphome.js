@@ -487,16 +487,27 @@ function renderSensorBlock(entities) {
           blocks.push(`- platform: homeassistant
   id: ha_color_temp_${getEntitySlug(entity)}
   entity_id: ${quoteYaml(entity.entityids[0])}
-  attribute: color_temp
+  attribute: color_temp_kelvin
   on_value:
     - lvgl.slider.update:
         id: ${getWidgetId(entity, 0)}_ct
         value: !lambda |-
-          return (int)(std::isnan(x) ? 153.0 : x);
+          if (std::isnan(x) || x <= 0) {
+            return 153;
+          }
+          float mired = 1000000.0f / x;
+          if (mired < 153.0f) mired = 153.0f;
+          if (mired > 500.0f) mired = 500.0f;
+          return (int) mired;
     - lvgl.obj.update:
         id: ${getWidgetId(entity, 0)}_ct_pill
         x: !lambda |-
-          float val = std::isnan(x) ? 153.0 : x;
+          float val = 153.0f;
+          if (!std::isnan(x) && x > 0) {
+            val = 1000000.0f / x;
+          }
+          if (val < 153.0f) val = 153.0f;
+          if (val > 500.0f) val = 500.0f;
           float slider_val = ((val - 153.0) / (500.0 - 153.0)) * 100.0;
           auto wrapper = id(${getWidgetId(entity, 0)}_ct_wrapper);
           int w = lv_obj_get_width(wrapper);
@@ -1169,7 +1180,6 @@ function renderLightSliderWidget(entity) {
                   shadow_width: 0
                 on_change:
                   then:
-                    - logger.log: "Color Temp Changed"
                     - lvgl.obj.update:
                         id: ${getWidgetId(entity, 0)}_ct_pill
                         x: !lambda |-
@@ -1180,15 +1190,18 @@ function renderLightSliderWidget(entity) {
                           float pct = val / max_val;
                           int pill_x = (int)(w * pct) - 10;
                           return (pill_x < 0) ? 0 : pill_x;
-                    - homeassistant.service:
-                        service: light.turn_on
+                    - homeassistant.action:
+                        action: light.turn_on
                         data:
                           entity_id: ${quoteYaml(entity.entityids[0])}
                         data_template:
-                          color_temp: "{{ ct }}"
+                          color_temp_kelvin: "{{ color_temp_kelvin }}"
                         variables:
-                          ct: !lambda "return (int)x;"
-                    - logger.log: "Color Temp Sent"`;
+                          color_temp_kelvin: !lambda |-
+                            int mired = (int) x;
+                            if (mired < 153) mired = 153;
+                            if (mired > 500) mired = 500;
+                            return (int) ((1000000.0f / mired) + 0.5f);`;
   }
 
   return yaml;
