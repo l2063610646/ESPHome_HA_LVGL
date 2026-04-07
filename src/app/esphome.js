@@ -300,7 +300,7 @@ display:
     dimensions:
       width: ${t.width}
       height: ${t.height}
-    data_rate: 40MHz
+    data_rate: 80MHz
     color_order: bgr
     invert_colors: false
     auto_clear_enabled: false
@@ -339,7 +339,7 @@ touchscreen:
       swap_xy: ${String(t.tSwap)}
       mirror_x: ${String(t.tMirX)}
       mirror_y: ${String(t.tMirY)}
-    update_interval: 50ms
+    update_interval: 16ms
 
 lvgl:
   default_font: ${UI_FONT_BODY}
@@ -449,7 +449,7 @@ display:
     dimensions:
       width: ${t.width}
       height: ${t.height}
-    data_rate: 40MHz
+    data_rate: 80MHz
     invert_colors: false
     auto_clear_enabled: false
     update_interval: never
@@ -468,7 +468,7 @@ touchscreen:
       swap_xy: ${String(t.tSwap)}
       mirror_x: ${String(t.tMirX)}
       mirror_y: ${String(t.tMirY)}
-    update_interval: 50ms
+    update_interval: 16ms
 
 lvgl:
   default_font: ${UI_FONT_BODY}
