@@ -12,7 +12,9 @@ import {
 import {
   getEffectiveFriendlyName,
   normalizeEntities,
+  normalizeScreens,
   normalizeOptionalColor,
+  normalizeSwipeDirection,
   quoteYaml,
 } from "./spec.js";
 
@@ -20,7 +22,8 @@ const UI_FONT_BODY = "montserrat_14";
 const UI_FONT_VALUE = "montserrat_16";
 
 export function renderCombinedYaml(state) {
-  const entities = normalizeEntities(state.entities, state.canvasWidth, state.canvasHeight);
+  const screens = normalizeScreens(state.screens, state.canvasWidth, state.canvasHeight);
+  const entities = screens.flatMap((screen) => normalizeEntities(screen.entities, state.canvasWidth, state.canvasHeight));
   const header = [
     "# This file is auto-generated.",
     `# Base config: ${state.board}.yaml`,
@@ -32,7 +35,7 @@ export function renderCombinedYaml(state) {
     renderBaseConfigYaml(state).trimEnd(),
     `  bg_color: ${state.screenBgColor}`,
     "  widgets:",
-    indentLines(renderWidgetBlock(entities) || "    []", 0),
+    indentLines(renderScreenWidgetBlock(screens, normalizeSwipeDirection(state.swipeDirection)) || "[]", 4),
     "",
     "switch:",
     indentLines(renderSwitchBlock(entities) || "[]", 2),
@@ -108,6 +111,41 @@ function getLightImageId(entity) {
 
 function getLightStateLabelId(entity) {
   return `light_state_${getEntitySlug(entity)}`;
+}
+
+function getScreenTileId(screen, index) {
+  return `screen_tile_${sanitizeId(screen.name || `screen_${index + 1}`)}`;
+}
+
+function renderScreenWidgetBlock(screens, swipeDirection) {
+  const direction = swipeDirection === "vertical" ? "VER" : "HOR";
+  const tiles = screens.map((screen, index) => {
+    const row = direction === "VER" ? index : 0;
+    const column = direction === "HOR" ? index : 0;
+    const widgets = screen.entities.map((entity) => renderWidget(entity)).join("\n");
+    return `        - id: ${getScreenTileId(screen, index)}
+          row: ${row}
+          column: ${column}
+          dir: ${direction}
+          bg_opa: TRANSP
+          border_width: 0
+          pad_all: 0
+          scrollable: false
+          scrollbar_mode: "OFF"
+          widgets:
+${widgets ? indentLines(widgets, 12) : "            []"}`;
+  }).join("\n");
+
+  return `- tileview:
+    id: main_tileview
+    width: 100%
+    height: 100%
+    pad_all: 0
+    border_width: 0
+    bg_opa: TRANSP
+    scrollbar_mode: "OFF"
+    tiles:
+${tiles}`;
 }
 
 function getLightColorTempSensorId(entity) {
@@ -613,11 +651,6 @@ function renderImageBlock(entities) {
         ];
       })
       .join("\n");
-}
-
-function renderWidgetBlock(entities) {
-  const widgets = entities.map((entity) => renderWidget(entity)).join("\n");
-  return widgets ? indentLines(widgets, 4) : "";
 }
 
 function renderSwitchComponent(entity, index) {

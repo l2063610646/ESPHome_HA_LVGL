@@ -5,6 +5,7 @@ import {
   renderCanvas,
   renderEntityList,
   renderInspector,
+  renderScreenTabs,
   setActivePaletteSwatch,
   syncCanvasUi,
   updateCanvasAppearance,
@@ -16,6 +17,7 @@ import {
   clampNumber,
   createEntityDraft,
   createInitialState,
+  createScreenDraft,
   defaultTitleForEntity,
   generateSpecYaml,
   minHeightForType,
@@ -23,7 +25,9 @@ import {
   normalizeEntities,
   normalizeEntity,
   normalizeIconSource,
+  normalizeScreens,
   normalizeStyle,
+  normalizeSwipeDirection,
   normalizeType,
   normalizeYamlColor,
   parseSpecYaml,
@@ -35,7 +39,7 @@ import {
   getDeviceNameValidation,
 } from "./spec.js";
 
-const STORAGE_KEY_PREFIX = "esphome-ui-builder-state-v1";
+const STORAGE_KEY_PREFIX = "esphome-ui-builder-state-v2";
 const state = createInitialState();
 
 const elements = {
@@ -59,6 +63,13 @@ const elements = {
   template: document.getElementById("entity-item-template"),
   boardSelect: document.getElementById("board-select"),
   rotationSelect: document.getElementById("rotation-select"),
+  swipeDirectionSelect: document.getElementById("swipe-direction"),
+  screenSelect: document.getElementById("screen-select"),
+  screenNameInput: document.getElementById("screen-name"),
+  addScreenBtn: document.getElementById("add-screen-btn"),
+  deleteScreenBtn: document.getElementById("delete-screen-btn"),
+  previewScreens: document.getElementById("preview-screens"),
+  previewDirection: document.getElementById("preview-direction"),
   screenBgColorInput: document.getElementById("screen-bg-color"),
   screenPalette: document.getElementById("screen-palette"),
   deviceNameInput: document.getElementById("device-name"),
@@ -103,7 +114,42 @@ elements.addEntityBtn.addEventListener("click", () => {
   const entity = normalizeEntity(createEntityDraft(nextType, nextIndex), state.canvasWidth, state.canvasHeight);
   state.entities.push(entity);
   state.selectedId = entity.id;
-  syncAll(`Added ${getEntityCapability(nextType).label} widget`);
+  syncAll(`Added ${getEntityCapability(nextType).label} widget to ${getCurrentScreen().name}`);
+});
+
+elements.addScreenBtn?.addEventListener("click", () => {
+  const nextScreen = createScreenDraft(state.screens.length + 1, state.canvasWidth, state.canvasHeight);
+  state.screens.push(nextScreen);
+  setCurrentScreen(nextScreen.id);
+  syncAll(`Added ${nextScreen.name}`);
+});
+
+elements.deleteScreenBtn?.addEventListener("click", () => {
+  if (state.screens.length <= 1) {
+    return;
+  }
+  const currentScreen = getCurrentScreen();
+  const index = state.screens.findIndex((screen) => screen.id === currentScreen.id);
+  state.screens.splice(index, 1);
+  const fallback = state.screens[Math.max(0, index - 1)] || state.screens[0];
+  setCurrentScreen(fallback.id);
+  syncAll(`Deleted ${currentScreen.name}`);
+});
+
+elements.screenSelect?.addEventListener("change", () => {
+  setCurrentScreen(elements.screenSelect.value);
+  syncAll(`Switched to ${getCurrentScreen().name}`);
+});
+
+elements.screenNameInput?.addEventListener("input", () => {
+  const currentScreen = getCurrentScreen();
+  currentScreen.name = elements.screenNameInput.value.trim() || currentScreen.name;
+  syncAll("Screen name updated");
+});
+
+elements.swipeDirectionSelect?.addEventListener("change", () => {
+  state.swipeDirection = normalizeSwipeDirection(elements.swipeDirectionSelect.value);
+  syncAll(`Swipe direction set to ${state.swipeDirection}`);
 });
 
 elements.loadYamlBtn.addEventListener("click", () => {
@@ -115,13 +161,19 @@ elements.loadYamlBtn.addEventListener("click", () => {
     }
     state.rotation = data.rotation || 0;
     state.screenBgColor = normalizeYamlColor(data.screen?.bg_color || data.screen_bg_color || state.screenBgColor);
+    state.swipeDirection = normalizeSwipeDirection(data.screen?.swipe_direction || data.screen?.swipe_dir || state.swipeDirection);
     state.deviceName = String(data.device?.name || data.device_name || state.deviceName);
     state.friendlyName = String(data.device?.friendly_name || data.friendly_name || state.friendlyName).trim();
     state.wifiSsid = String(data.wifi?.ssid || data.wifi_ssid || state.wifiSsid).trim();
     state.wifiPassword = String(data.wifi?.password || data.wifi_password || state.wifiPassword).trim();
     updateCanvasDimensions(state);
-    state.entities = normalizeEntities(data.entities || [], state.canvasWidth, state.canvasHeight);
-    state.selectedId = state.entities[0]?.id ?? null;
+    state.screens = normalizeScreens(
+      data.screens?.length ? data.screens : [{ name: "Screen 1", entities: data.entities || [] }],
+      state.canvasWidth,
+      state.canvasHeight
+    );
+    state.currentScreenId = state.screens[0]?.id ?? null;
+    syncCurrentScreenEntities();
     syncFormControls();
     syncAll("Loaded YAML");
   } catch (error) {
@@ -208,6 +260,7 @@ elements.deleteBtn.addEventListener("click", () => {
     return;
   }
   state.entities = state.entities.filter((entity) => entity.id !== state.selectedId);
+  getCurrentScreen().entities = state.entities;
   state.selectedId = state.entities[0]?.id ?? null;
   syncAll("Deleted widget");
 });
@@ -377,8 +430,31 @@ function setBoard(boardKey) {
 function setRotation(deg) {
   state.rotation = deg;
   updateCanvasDimensions(state);
+  syncCurrentScreenEntities();
   syncCanvasUi(state, elements.canvasResTitle);
   updateCanvasAppearance(state.screenBgColor);
+}
+
+function setCurrentScreen(screenId) {
+  if (!state.screens.some((screen) => screen.id === screenId)) {
+    return;
+  }
+  state.currentScreenId = screenId;
+  syncCurrentScreenEntities();
+  syncScreenControls();
+}
+
+function syncCurrentScreenEntities() {
+  const currentScreen = getCurrentScreen();
+  state.currentScreenId = currentScreen?.id ?? null;
+  state.entities = currentScreen?.entities ?? [];
+  if (!state.entities.some((entity) => entity.id === state.selectedId)) {
+    state.selectedId = state.entities[0]?.id ?? null;
+  }
+}
+
+function getCurrentScreen() {
+  return state.screens.find((screen) => screen.id === state.currentScreenId) || state.screens[0];
 }
 
 function stopDrag() {
@@ -491,7 +567,7 @@ function handleInspectorCommit() {
   );
   entity.props.height = clampNumber(
     elements.fieldHeight.value,
-    minHeightForType(entity.type, entity.props.style),
+    minHeightForType(entity.type, entity.props.style, entity.props),
     state.canvasHeight
   );
   entity.props.x = clamp(clampNumber(elements.fieldX.value, 0, state.canvasWidth), 0, state.canvasWidth - entity.props.width);
@@ -517,6 +593,7 @@ function syncFromInspector(message = "Ready") {
 }
 
 function renderApp() {
+  syncScreenControls();
   renderCanvas(state, elements, {
     onSelect(entityId, message) {
       state.selectedId = entityId;
@@ -565,7 +642,41 @@ function renderApp() {
     syncAll(message);
   });
 
+  renderScreenTabs(
+    state.screens,
+    state.currentScreenId,
+    state.swipeDirection,
+    elements.previewScreens,
+    elements.previewDirection,
+    (screenId) => {
+      setCurrentScreen(screenId);
+      syncAll(`Switched to ${getCurrentScreen().name}`);
+    }
+  );
+
   renderInspector(getSelectedEntity(), elements);
+}
+
+function syncScreenControls() {
+  if (elements.swipeDirectionSelect) {
+    elements.swipeDirectionSelect.value = normalizeSwipeDirection(state.swipeDirection);
+  }
+  if (elements.screenSelect) {
+    elements.screenSelect.replaceChildren();
+    state.screens.forEach((screen, index) => {
+      const option = document.createElement("option");
+      option.value = screen.id;
+      option.textContent = screen.name || `Screen ${index + 1}`;
+      elements.screenSelect.append(option);
+    });
+    elements.screenSelect.value = state.currentScreenId;
+  }
+  if (elements.screenNameInput) {
+    elements.screenNameInput.value = getCurrentScreen()?.name || "";
+  }
+  if (elements.deleteScreenBtn) {
+    elements.deleteScreenBtn.disabled = state.screens.length <= 1;
+  }
 }
 
 function getSelectedEntity() {
@@ -612,6 +723,7 @@ function syncFormControls() {
   updateCanvasAppearance(state.screenBgColor);
   setActivePaletteSwatch(elements.screenPalette, elements.screenBgColorInput.value);
   renderDeviceNameHelp();
+  syncScreenControls();
   updateThermoIconInspectorPreview(elements);
   updateLightIconInspectorPreview(elements);
 }
@@ -645,14 +757,20 @@ function createStateSnapshot() {
     board: state.board,
     rotation: state.rotation,
     screenBgColor: state.screenBgColor,
+    swipeDirection: state.swipeDirection,
+    currentScreenId: state.currentScreenId,
     deviceName: state.deviceName,
     friendlyName: state.friendlyName,
     wifiSsid: state.wifiSsid,
     wifiPassword: state.wifiPassword,
-    entities: state.entities.map((entity) => ({
-      type: entity.type,
-      entityids: [...entity.entityids],
-      props: { ...entity.props },
+    screens: state.screens.map((screen) => ({
+      id: screen.id,
+      name: screen.name,
+      entities: screen.entities.map((entity) => ({
+        type: entity.type,
+        entityids: [...entity.entityids],
+        props: { ...entity.props },
+      })),
     })),
   };
 }
@@ -665,13 +783,21 @@ function applyStateSnapshot(snapshot) {
   state.board = BOARD_CONFIGS[snapshot.board] ? snapshot.board : "nextion_35";
   state.rotation = Number(snapshot.rotation) || 0;
   state.screenBgColor = normalizeYamlColor(snapshot.screenBgColor || "0xF3EFE7");
+  state.swipeDirection = normalizeSwipeDirection(snapshot.swipeDirection);
   state.deviceName = String(snapshot.deviceName ?? "");
   state.friendlyName = String(snapshot.friendlyName ?? "").trim();
   state.wifiSsid = String(snapshot.wifiSsid ?? "").trim();
   state.wifiPassword = String(snapshot.wifiPassword ?? "").trim();
   updateCanvasDimensions(state);
-  state.entities = normalizeEntities(snapshot.entities || [], state.canvasWidth, state.canvasHeight);
-  state.selectedId = state.entities[0]?.id ?? null;
+  state.screens = normalizeScreens(
+    snapshot.screens?.length ? snapshot.screens : [{ name: "Screen 1", entities: snapshot.entities || [] }],
+    state.canvasWidth,
+    state.canvasHeight
+  );
+  state.currentScreenId = state.screens.some((screen) => screen.id === snapshot.currentScreenId)
+    ? snapshot.currentScreenId
+    : state.screens[0]?.id ?? null;
+  syncCurrentScreenEntities();
 }
 
 function resetStateToEmptyDefaults(boardKey = "nextion_35") {
@@ -679,13 +805,16 @@ function resetStateToEmptyDefaults(boardKey = "nextion_35") {
   state.board = BOARD_CONFIGS[boardKey] ? boardKey : fresh.board;
   state.rotation = fresh.rotation;
   state.screenBgColor = fresh.screenBgColor;
+  state.swipeDirection = fresh.swipeDirection;
   state.deviceName = "";
   state.friendlyName = "";
   state.wifiSsid = "";
   state.wifiPassword = "";
-  state.entities = [];
+  state.screens = normalizeScreens(fresh.screens, fresh.canvasWidth, fresh.canvasHeight);
+  state.currentScreenId = state.screens[0]?.id ?? null;
   state.selectedId = null;
   updateCanvasDimensions(state);
+  syncCurrentScreenEntities();
 }
 
 function saveStateToCache() {
@@ -713,6 +842,7 @@ function restoreStateFromCache(boardKey = state.board) {
     applyStateSnapshot(JSON.parse(raw));
     state.board = boardKey;
     updateCanvasDimensions(state);
+    syncCurrentScreenEntities();
     saveStateToCache();
     return { restored: true, recovered: false };
   } catch (_error) {

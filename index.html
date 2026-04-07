@@ -45,6 +45,13 @@
             </select>
           </label>
           <label class="stack">
+            <span>Swipe Direction</span>
+            <select id="swipe-direction">
+              <option value="horizontal">Horizontal</option>
+              <option value="vertical">Vertical</option>
+            </select>
+          </label>
+          <label class="stack">
             <span>Screen Background</span>
             <input id="screen-bg-color" type="color" value="#f3efe7" />
           </label>
@@ -55,6 +62,20 @@
             <button type="button" class="palette-swatch" data-color="#dfe8f3" style="--swatch:#dfe8f3"></button>
             <button type="button" class="palette-swatch" data-color="#1f2933" style="--swatch:#1f2933"></button>
             <button type="button" class="palette-swatch" data-color="#0f1720" style="--swatch:#0f1720"></button>
+          </div>
+          <div class="screen-config-block">
+            <label class="stack">
+              <span>Current Screen</span>
+              <select id="screen-select"></select>
+            </label>
+            <label class="stack">
+              <span>Screen Name</span>
+              <input id="screen-name" type="text" placeholder="Screen 1" />
+            </label>
+            <div class="button-row button-row-two">
+              <button id="add-screen-btn" type="button">Add Screen</button>
+              <button id="delete-screen-btn" type="button" class="danger">Delete Screen</button>
+            </div>
           </div>
         </div>
 
@@ -135,6 +156,8 @@
             </div>
             <p id="status" class="status">Ready</p>
           </div>
+          <div id="preview-screens" class="preview-screens"></div>
+          <p id="preview-direction" class="hint preview-direction"></p>
           <div class="canvas-wrap">
             <div id="canvas" class="canvas" aria-label="UI preview canvas"></div>
           </div>
@@ -230,7 +253,7 @@
               <div id="light-slider-fields" class="hidden">
                 <label style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px; font-size: 13px; color: #596775; cursor: pointer;">
                   <input id="field-color-temp" type="checkbox" style="cursor: pointer;" />
-                  <span>Support Color Temperature (153-500 Mireds)</span>
+                  <span>Support Color Temperature Slider</span>
                 </label>
               </div>
               <div class="icon-preview-grid">

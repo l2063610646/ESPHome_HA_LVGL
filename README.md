@@ -40,7 +40,11 @@ Future AI collaborators should read `AGENTS.md` first.
 Internally, the editor stores page state in a compact YAML-friendly shape:
 
 - Top-level page settings:
-  `base_config`, optional `rotation`, optional `device`, optional `wifi`, optional `screen`.
+  `base_config`, optional `rotation`, optional `device`, optional `wifi`, optional `screen`, and `screens`.
+- `screen.swipe_direction`
+  Controls page-to-page swipe direction. Supported values: `horizontal`, `vertical`.
+- `screens`
+  Ordered list of HMI screens. Each screen has `name` and `entities`.
 - `type: switch`
   Uses one `entityid`.
 - `type: light`
@@ -73,29 +77,34 @@ wifi:
   password: "MyPassword"
 screen:
   bg_color: "0xF3EFE7"
-entities:
-  - entityid: "switch.living_room"
-    type: switch
-    props:
-      style: "button"
-      x: 24
-      y: 24
-      width: 220
-      height: 88
-      title: "Living Room"
-  - entityids:
-      - "sensor.room_temperature"
-      - "sensor.room_humidity"
-    type: thermo_hygrometer
-    props:
-      style: "compact"
-      temp_icon: "mdi:thermometer"
-      hum_icon: "https://l2063610646.github.io/tools/hum.png"
-      x: 24
-      y: 130
-      width: 220
-      height: 112
-      title: "Climate"
+  swipe_direction: "horizontal"
+screens:
+  - name: "Main"
+    entities:
+      - entityid: "switch.living_room"
+        type: switch
+        props:
+          style: "button"
+          x: 24
+          y: 24
+          width: 220
+          height: 88
+          title: "Living Room"
+  - name: "Climate"
+    entities:
+      - entityids:
+          - "sensor.room_temperature"
+          - "sensor.room_humidity"
+        type: thermo_hygrometer
+        props:
+          style: "compact"
+          temp_icon: "mdi:thermometer"
+          hum_icon: "https://l2063610646.github.io/tools/hum.png"
+          x: 24
+          y: 130
+          width: 220
+          height: 112
+          title: "Climate"
 ```
 
 ## Workflow
@@ -111,9 +120,11 @@ Or serve it as any static site if preferred.
 In the app you can:
 
 - choose a board model and rotation
+- choose one global screen swipe direction for the HMI
 - set `device_name` and optional `friendly_name`
 - set Wi-Fi SSID and password
 - set the LVGL screen background color
+- add, remove, rename, and switch between multiple screens
 - drag and resize widgets
 - edit the page through the visual editor
 - inspect or paste YAML in the spec text area when needed
@@ -144,13 +155,14 @@ Treat generated LVGL as the source of truth.
 - Keep the web preview close to the generated card spacing, borders, radius, and control layout.
 - Avoid browser-only effects that LVGL cannot match closely.
 - If exact parity is not possible, simplify the web preview toward LVGL rather than making the preview more decorative.
-- The browser editor preview and generated LVGL output are intentionally non-scrollable; content that does not fit the current screen should remain clipped rather than scroll.
+- The browser preview canvas and generated LVGL screens are intentionally non-scrollable; content that does not fit the current screen should remain clipped rather than scroll.
 
 ## Notes
 
 - The editor can generate the final ESPHome YAML entirely in the browser.
 - The editor automatically regenerates the final ESPHome YAML as you edit.
 - The browser caches editor state locally per HMI board and restores it on the next visit.
+- The generated LVGL layout uses a multi-screen `tileview` when more than one screen is configured.
 - If `friendly_name` is empty, the generated YAML uses `device_name.toUpperCase()`.
 - Screen background color is generated as `lvgl.bg_color`.
 - The repository no longer depends on the old Python generator for normal use.

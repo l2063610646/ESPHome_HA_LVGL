@@ -26,17 +26,35 @@ import {
 } from "./constants.js";
 
 export const initialSpec = {
-  entities: [],
+  screens: [],
 };
 
+const DEFAULT_SWIPE_DIRECTION = "horizontal";
+
+function createScreenId() {
+  return `screen-${Math.random().toString(36).slice(2, 11)}`;
+}
+
+function defaultScreenName(index) {
+  return `Screen ${index}`;
+}
+
+export function normalizeSwipeDirection(value) {
+  return String(value || "").trim().toLowerCase() === "vertical" ? "vertical" : DEFAULT_SWIPE_DIRECTION;
+}
+
 export function createInitialState() {
+  const screens = normalizeScreens(initialSpec.screens);
   const state = {
-    entities: normalizeEntities(initialSpec.entities),
+    screens,
+    currentScreenId: screens[0]?.id ?? null,
+    entities: screens[0]?.entities ?? [],
     selectedId: null,
     drag: null,
     board: "nextion_35",
     rotation: 0,
     screenBgColor: "0xF3EFE7",
+    swipeDirection: DEFAULT_SWIPE_DIRECTION,
     deviceName: "onx3248g035",
     friendlyName: "",
     wifiSsid: "",
@@ -96,6 +114,7 @@ export function getDeviceNameValidation(value) {
 export function generateSpecYaml(state) {
   const lines = [];
   const deviceName = sanitizeDeviceName(state.deviceName);
+  const screens = normalizeScreens(state.screens, state.canvasWidth, state.canvasHeight);
   lines.push(`base_config: ${state.board}`);
   if (state.rotation !== 0) {
     lines.push(`rotation: ${state.rotation}`);
@@ -110,54 +129,74 @@ export function generateSpecYaml(state) {
   lines.push(`  password: ${quoteYaml(state.wifiPassword)}`);
   lines.push("screen:");
   lines.push(`  bg_color: ${quoteYaml(state.screenBgColor)}`);
-  lines.push("entities:");
-  state.entities.forEach((entity) => {
-    if (entity.type === "switch" || entity.type === "light") {
-      lines.push(`  - entityid: ${quoteYaml(entity.entityids[0])}`);
-    } else {
-      lines.push("  - entityids:");
-      lines.push(`      - ${quoteYaml(entity.entityids[0])}`);
-      lines.push(`      - ${quoteYaml(entity.entityids[1])}`);
+  lines.push(`  swipe_direction: ${quoteYaml(normalizeSwipeDirection(state.swipeDirection))}`);
+  lines.push("screens:");
+  screens.forEach((screen, index) => {
+    lines.push(`  - name: ${quoteYaml(screen.name || defaultScreenName(index + 1))}`);
+    lines.push("    entities:");
+    if (!screen.entities.length) {
+      lines.push("      []");
+      return;
     }
-    lines.push(`    type: ${entity.type}`);
-    lines.push("    props:");
-    lines.push(`      style: ${quoteYaml(normalizeStyle(entity.type, entity.props.style))}`);
-    lines.push(`      x: ${entity.props.x}`);
-    lines.push(`      y: ${entity.props.y}`);
-    lines.push(`      width: ${entity.props.width}`);
-    lines.push(`      height: ${entity.props.height}`);
-    lines.push(`      title: ${quoteYaml(entity.props.title)}`);
-    if (entity.type === "thermo_hygrometer") {
-      if (normalizeIconSource(entity.props.temp_icon)) {
-        lines.push(`      temp_icon: ${quoteYaml(entity.props.temp_icon)}`);
-      }
-      if (normalizeIconSource(entity.props.hum_icon)) {
-        lines.push(`      hum_icon: ${quoteYaml(entity.props.hum_icon)}`);
-      }
-    }
-    if (entity.type === "light") {
-      if (normalizeIconSource(entity.props.icon)) {
-        lines.push(`      icon: ${quoteYaml(entity.props.icon)}`);
-      }
-      if (normalizeStyle(entity.type, entity.props.style) === LIGHT_STYLE_TILE || normalizeStyle(entity.type, entity.props.style) === LIGHT_STYLE_SLIDER) {
-        lines.push(`      tile_icon_position: ${quoteYaml(normalizeLightTileIconPosition(entity.props.tile_icon_position))}`);
-      }
-      if (entity.props.color_temp) {
-        lines.push(`      color_temp: true`);
-      }
-    }
+    screen.entities.forEach((entity) => appendEntityYaml(lines, entity, "      "));
   });
   return `${lines.join("\n")}\n`;
 }
 
+function appendEntityYaml(lines, entity, indent = "  ") {
+  const propIndent = `${indent}  `;
+  if (entity.type === "switch" || entity.type === "light") {
+    lines.push(`${indent}- entityid: ${quoteYaml(entity.entityids[0])}`);
+  } else {
+    lines.push(`${indent}- entityids:`);
+    lines.push(`${propIndent}    - ${quoteYaml(entity.entityids[0])}`);
+    lines.push(`${propIndent}    - ${quoteYaml(entity.entityids[1])}`);
+  }
+  lines.push(`${propIndent}type: ${entity.type}`);
+  lines.push(`${propIndent}props:`);
+  lines.push(`${propIndent}  style: ${quoteYaml(normalizeStyle(entity.type, entity.props.style))}`);
+  lines.push(`${propIndent}  x: ${entity.props.x}`);
+  lines.push(`${propIndent}  y: ${entity.props.y}`);
+  lines.push(`${propIndent}  width: ${entity.props.width}`);
+  lines.push(`${propIndent}  height: ${entity.props.height}`);
+  lines.push(`${propIndent}  title: ${quoteYaml(entity.props.title)}`);
+  if (entity.type === "thermo_hygrometer") {
+    if (normalizeIconSource(entity.props.temp_icon)) {
+      lines.push(`${propIndent}  temp_icon: ${quoteYaml(entity.props.temp_icon)}`);
+    }
+    if (normalizeIconSource(entity.props.hum_icon)) {
+      lines.push(`${propIndent}  hum_icon: ${quoteYaml(entity.props.hum_icon)}`);
+    }
+  }
+  if (entity.type === "light") {
+    if (normalizeIconSource(entity.props.icon)) {
+      lines.push(`${propIndent}  icon: ${quoteYaml(entity.props.icon)}`);
+    }
+    if (normalizeStyle(entity.type, entity.props.style) === LIGHT_STYLE_TILE || normalizeStyle(entity.type, entity.props.style) === LIGHT_STYLE_SLIDER) {
+      lines.push(`${propIndent}  tile_icon_position: ${quoteYaml(normalizeLightTileIconPosition(entity.props.tile_icon_position))}`);
+    }
+    if (entity.props.color_temp) {
+      lines.push(`${propIndent}  color_temp: true`);
+    }
+  }
+}
+
 export function parseSpecYaml(source) {
-  const lines = source
+  const rows = source
     .split(/\r?\n/)
     .map((line) => line.replace(/\t/g, "  "))
-    .filter((line) => line.trim() !== "" && !line.trim().startsWith("#"));
+    .filter((line) => line.trim() !== "" && !line.trim().startsWith("#"))
+    .map((line) => ({
+      raw: line,
+      trimmed: line.trim(),
+      indent: line.match(/^ */)?.[0].length ?? 0,
+    }));
 
-  const entities = [];
-  let current = null;
+  const screens = [];
+  const topLevelEntities = [];
+  let currentScreen = null;
+  let currentEntity = null;
+  let currentEntityTarget = topLevelEntities;
   let inProps = false;
   let inEntityIds = false;
   let inScreen = false;
@@ -170,73 +209,129 @@ export function parseSpecYaml(source) {
   const wifi = {};
   const device = {};
 
-  lines.forEach((line) => {
-    const trimmed = line.trim();
-    if (trimmed.startsWith("base_config:")) {
+  const pushCurrentEntity = () => {
+    if (!currentEntity) {
+      return;
+    }
+    currentEntityTarget.push(currentEntity);
+    currentEntity = null;
+    inProps = false;
+    inEntityIds = false;
+  };
+
+  const pushCurrentScreen = () => {
+    if (!currentScreen) {
+      return;
+    }
+    pushCurrentEntity();
+    currentScreen.entities = Array.isArray(currentScreen.entities) ? currentScreen.entities : [];
+    screens.push(currentScreen);
+    currentScreen = null;
+  };
+
+  rows.forEach(({ trimmed, indent }) => {
+    if (indent === 0 && trimmed.startsWith("base_config:")) {
+      pushCurrentScreen();
       const nextBoard = readYamlValue(trimmed.slice("base_config:".length).trim());
       board = BOARD_CONFIGS[nextBoard] ? nextBoard : null;
       return;
     }
-    if (trimmed.startsWith("rotation:")) {
+    if (indent === 0 && trimmed.startsWith("rotation:")) {
+      pushCurrentScreen();
       rotation = parseInt(trimmed.slice("rotation:".length).trim(), 10) || 0;
       return;
     }
-    if (trimmed === "device:") {
+    if (indent === 0 && trimmed === "device:") {
+      pushCurrentScreen();
       inDevice = true;
       inWifi = false;
       inScreen = false;
-      inProps = false;
-      inEntityIds = false;
       return;
     }
-    if (inDevice && line.startsWith("  ") && trimmed.includes(":")) {
+    if (inDevice && indent === 2 && trimmed.includes(":")) {
       const separatorIndex = trimmed.indexOf(":");
       const key = trimmed.slice(0, separatorIndex).trim();
       const rawValue = trimmed.slice(separatorIndex + 1).trim();
       device[key] = readYamlValue(rawValue);
       return;
     }
-    if (trimmed === "wifi:") {
+    if (indent === 0 && trimmed === "wifi:") {
+      pushCurrentScreen();
       inDevice = false;
       inWifi = true;
       inScreen = false;
-      inProps = false;
-      inEntityIds = false;
       return;
     }
-    if (inWifi && line.startsWith("  ") && trimmed.includes(":")) {
+    if (inWifi && indent === 2 && trimmed.includes(":")) {
       const separatorIndex = trimmed.indexOf(":");
       const key = trimmed.slice(0, separatorIndex).trim();
       const rawValue = trimmed.slice(separatorIndex + 1).trim();
       wifi[key] = readYamlValue(rawValue);
       return;
     }
-    if (trimmed === "screen:") {
+    if (indent === 0 && trimmed === "screen:") {
+      pushCurrentScreen();
       inDevice = false;
       inWifi = false;
       inScreen = true;
-      inProps = false;
-      inEntityIds = false;
       return;
     }
-    if (inScreen && line.startsWith("  ") && trimmed.includes(":")) {
+    if (inScreen && indent === 2 && trimmed.includes(":")) {
       const separatorIndex = trimmed.indexOf(":");
       const key = trimmed.slice(0, separatorIndex).trim();
       const rawValue = trimmed.slice(separatorIndex + 1).trim();
       screen[key] = readYamlValue(rawValue);
       return;
     }
-    if (trimmed === "entities:") {
+    if (indent === 0 && trimmed === "entities:") {
+      pushCurrentScreen();
+      inDevice = false;
+      inWifi = false;
+      inScreen = false;
+      currentEntityTarget = topLevelEntities;
+      return;
+    }
+    if (indent === 0 && trimmed === "screens:") {
+      pushCurrentScreen();
       inDevice = false;
       inWifi = false;
       inScreen = false;
       return;
     }
-    if (trimmed.startsWith("- entityid:")) {
-      if (current) {
-        entities.push(current);
+    if (indent === 2 && trimmed.startsWith("- ")) {
+      pushCurrentScreen();
+      currentScreen = {
+        id: createScreenId(),
+        name: defaultScreenName(screens.length + 1),
+        entities: [],
+      };
+      currentEntityTarget = currentScreen.entities;
+      const rest = trimmed.slice(2).trim();
+      if (rest && rest.includes(":")) {
+        const separatorIndex = rest.indexOf(":");
+        const key = rest.slice(0, separatorIndex).trim();
+        const rawValue = rest.slice(separatorIndex + 1).trim();
+        if (key === "name") {
+          currentScreen.name = String(readYamlValue(rawValue) || currentScreen.name);
+        }
       }
-      current = {
+      return;
+    }
+    if (currentScreen && indent === 4 && trimmed.startsWith("name:")) {
+      currentScreen.name = String(readYamlValue(trimmed.slice("name:".length).trim()) || currentScreen.name);
+      return;
+    }
+    if (currentScreen && indent === 4 && trimmed === "entities:") {
+      pushCurrentEntity();
+      currentEntityTarget = currentScreen.entities;
+      return;
+    }
+    if (trimmed === "[]") {
+      return;
+    }
+    if (trimmed.startsWith("- entityid:")) {
+      pushCurrentEntity();
+      currentEntity = {
         entityid: readYamlValue(trimmed.slice("- entityid:".length).trim()),
         type: "switch",
         props: {},
@@ -246,10 +341,8 @@ export function parseSpecYaml(source) {
       return;
     }
     if (trimmed === "- entityids:") {
-      if (current) {
-        entities.push(current);
-      }
-      current = {
+      pushCurrentEntity();
+      currentEntity = {
         entityids: [],
         type: "switch",
         props: {},
@@ -258,15 +351,15 @@ export function parseSpecYaml(source) {
       inEntityIds = true;
       return;
     }
-    if (!current) {
-      throw new Error("Invalid YAML: expected `entities:` followed by entity items.");
+    if (!currentEntity) {
+      throw new Error(`Unsupported line: ${trimmed}`);
     }
     if (inEntityIds && trimmed.startsWith("- ")) {
-      current.entityids.push(readYamlValue(trimmed.slice(2).trim()));
+      currentEntity.entityids.push(readYamlValue(trimmed.slice(2).trim()));
       return;
     }
     if (trimmed.startsWith("type:")) {
-      current.type = readYamlValue(trimmed.slice("type:".length).trim());
+      currentEntity.type = readYamlValue(trimmed.slice("type:".length).trim());
       inEntityIds = false;
       return;
     }
@@ -279,21 +372,50 @@ export function parseSpecYaml(source) {
       const separatorIndex = trimmed.indexOf(":");
       const key = trimmed.slice(0, separatorIndex).trim();
       const rawValue = trimmed.slice(separatorIndex + 1).trim();
-      current.props[key] = readYamlValue(rawValue);
+      currentEntity.props[key] = readYamlValue(rawValue);
       return;
     }
     throw new Error(`Unsupported line: ${trimmed}`);
   });
 
-  if (current) {
-    entities.push(current);
-  }
+  pushCurrentScreen();
 
-  return { board, entities, rotation, screen, wifi, device };
+  const normalizedScreens = screens.length
+    ? screens
+    : [{ name: defaultScreenName(1), entities: topLevelEntities }];
+
+  return { board, screens: normalizedScreens, entities: topLevelEntities, rotation, screen, wifi, device };
 }
 
 export function normalizeEntities(entities, canvasWidth = BOARD_CONFIGS.nextion_35.width, canvasHeight = BOARD_CONFIGS.nextion_35.height) {
   return entities.map((entity) => normalizeEntity(entity, canvasWidth, canvasHeight));
+}
+
+export function createScreenDraft(index, canvasWidth = BOARD_CONFIGS.nextion_35.width, canvasHeight = BOARD_CONFIGS.nextion_35.height) {
+  return normalizeScreen(
+    {
+      name: defaultScreenName(index),
+      entities: [],
+    },
+    index,
+    canvasWidth,
+    canvasHeight
+  );
+}
+
+export function normalizeScreen(screen, index = 1, canvasWidth = BOARD_CONFIGS.nextion_35.width, canvasHeight = BOARD_CONFIGS.nextion_35.height) {
+  return {
+    id: String(screen?.id || createScreenId()),
+    name: String(screen?.name || defaultScreenName(index)).trim() || defaultScreenName(index),
+    entities: normalizeEntities(screen?.entities || [], canvasWidth, canvasHeight),
+  };
+}
+
+export function normalizeScreens(screens, canvasWidth = BOARD_CONFIGS.nextion_35.width, canvasHeight = BOARD_CONFIGS.nextion_35.height) {
+  if (Array.isArray(screens) && screens.length) {
+    return screens.map((screen, index) => normalizeScreen(screen, index + 1, canvasWidth, canvasHeight));
+  }
+  return [createScreenDraft(1, canvasWidth, canvasHeight)];
 }
 
 export function normalizeEntity(entity, canvasWidth = BOARD_CONFIGS.nextion_35.width, canvasHeight = BOARD_CONFIGS.nextion_35.height) {
@@ -301,7 +423,7 @@ export function normalizeEntity(entity, canvasWidth = BOARD_CONFIGS.nextion_35.w
   const props = entity.props || {};
   const style = normalizeStyle(type, props.style);
   const width = clampNumber(props.width ?? defaultWidthForType(type, style), minWidthForType(type, style), canvasWidth);
-  const height = clampNumber(props.height ?? defaultHeightForType(type, style), minHeightForType(type, style), canvasHeight);
+  const height = clampNumber(props.height ?? defaultHeightForType(type, style, props), minHeightForType(type, style, props), canvasHeight);
   const entityids = normalizeEntityIds(entity, type);
   return {
     id: `id-${Math.random().toString(36).slice(2, 11)}`,
@@ -337,16 +459,23 @@ export function updateCanvasDimensions(state) {
   state.canvasWidth = isRotated ? config.height : config.width;
   state.canvasHeight = isRotated ? config.width : config.height;
 
-  state.entities.forEach((entity) => {
-    entity.props.width = clamp(entity.props.width, minWidthForType(entity.type), state.canvasWidth);
-    entity.props.height = clamp(
-      entity.props.height,
-      minHeightForType(entity.type, entity.props.style),
-      state.canvasHeight
-    );
-    entity.props.x = clamp(entity.props.x, 0, state.canvasWidth - entity.props.width);
-    entity.props.y = clamp(entity.props.y, 0, state.canvasHeight - entity.props.height);
+  const screens = Array.isArray(state.screens) ? state.screens : [];
+  screens.forEach((screen) => {
+    screen.entities.forEach((entity) => {
+      entity.props.width = clamp(entity.props.width, minWidthForType(entity.type), state.canvasWidth);
+      entity.props.height = clamp(
+        entity.props.height,
+        minHeightForType(entity.type, entity.props.style, entity.props),
+        state.canvasHeight
+      );
+      entity.props.x = clamp(entity.props.x, 0, state.canvasWidth - entity.props.width);
+      entity.props.y = clamp(entity.props.y, 0, state.canvasHeight - entity.props.height);
+    });
   });
+
+  const currentScreen = screens.find((item) => item.id === state.currentScreenId) || screens[0] || null;
+  state.currentScreenId = currentScreen?.id ?? null;
+  state.entities = currentScreen?.entities ?? [];
 }
 
 export function normalizeEntityIds(entity, type) {
@@ -434,7 +563,7 @@ export function minWidthForType(type, style) {
   if (type === "light") {
     if (style === LIGHT_STYLE_TILE) return 80;
     if (style === LIGHT_STYLE_SLIDER) return 180;
-    return 48; // Minimum touch target size
+    return 48;
   }
   return 150;
 }
@@ -569,6 +698,12 @@ export function readYamlValue(rawValue) {
   }
   if (/^-?\d+$/.test(rawValue)) {
     return Number(rawValue);
+  }
+  if (rawValue === "true") {
+    return true;
+  }
+  if (rawValue === "false") {
+    return false;
   }
   return rawValue;
 }

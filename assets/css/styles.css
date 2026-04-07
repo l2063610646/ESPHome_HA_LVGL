@@ -258,6 +258,16 @@ h2 {
   gap: 10px;
 }
 
+.button-row-two {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.screen-config-block {
+  margin-top: 16px;
+  display: grid;
+  gap: 12px;
+}
+
 .button-row .danger {
   background: linear-gradient(135deg, #b9412e, #d96c54);
 }
@@ -316,6 +326,34 @@ textarea {
 .canvas-wrap {
   overflow: hidden;
   padding: 6px 0 0;
+}
+
+.preview-screens {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.preview-direction {
+  margin: 0 0 10px;
+}
+
+.screen-tab {
+  appearance: none;
+  border: 1px solid rgba(31, 41, 51, 0.12);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.8);
+  color: var(--muted);
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: border-color 120ms ease, color 120ms ease, box-shadow 120ms ease;
+}
+
+.screen-tab.active {
+  color: var(--ink);
+  border-color: rgba(20, 99, 86, 0.35);
+  box-shadow: 0 10px 20px rgba(20, 99, 86, 0.12);
 }
 
 .canvas {

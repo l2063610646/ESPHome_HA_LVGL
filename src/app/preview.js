@@ -120,6 +120,24 @@ export function renderEntityList(state, entityList, template, onSelect) {
   });
 }
 
+export function renderScreenTabs(screens, currentScreenId, swipeDirection, container, directionNode, onSelect) {
+  if (container) {
+    container.replaceChildren();
+    screens.forEach((screen, index) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = `screen-tab${screen.id === currentScreenId ? " active" : ""}`;
+      button.textContent = screen.name || `Screen ${index + 1}`;
+      button.addEventListener("click", () => onSelect(screen.id));
+      container.append(button);
+    });
+  }
+
+  if (directionNode) {
+    directionNode.textContent = `Swipe: ${swipeDirection === "vertical" ? "Vertical" : "Horizontal"}`;
+  }
+}
+
 export function renderInspector(entity, elements) {
   const {
     emptyState,
