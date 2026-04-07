@@ -514,6 +514,11 @@ textarea {
   text-overflow: clip;
 }
 
+.multi-switch-channel.on {
+  background: #90c3a5;
+  border-color: #78a58a;
+}
+
 .multi-switch-empty {
   position: absolute;
   left: 16px;
@@ -527,6 +532,26 @@ textarea {
   color: #7b8a92;
   font-size: 13px;
   background: rgba(238, 243, 240, 0.55);
+}
+
+.multi-switch-list-group {
+  position: absolute;
+  inset: 0;
+}
+
+.multi-switch-list-item {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0;
+}
+
+.multi-switch-list-label {
+  font-size: var(--preview-font-body-size);
+  font-weight: 500;
+  color: #24323a;
+  white-space: nowrap;
 }
 
 .thermo-group {

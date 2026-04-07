@@ -20,7 +20,9 @@ import {
   LIGHT_STYLE_TILE,
   LIGHT_STYLE_SLIDER,
   MULTI_SWITCH_STYLE_TILE,
+  MULTI_SWITCH_STYLE_LIST,
   getMultiSwitchChannelTitle,
+  getEnabledSwitchIndices,
   normalizeLightTileIconPosition,
   isMultiSwitchChannelEnabled,
   SWITCH_BUTTON_STYLE_HEIGHT,
@@ -190,6 +192,9 @@ function appendEntityYaml(lines, entity, indent = "  ") {
       lines.push(`${propIndent}  channel_${index + 1}_title: ${quoteYaml(getMultiSwitchChannelTitle(entity.props, index))}`);
       lines.push(`${propIndent}  channel_${index + 1}_enabled: ${isMultiSwitchChannelEnabled(entity.props, index) ? "true" : "false"}`);
     }
+  }
+  if (entity.props.active_bg_color) {
+    lines.push(`${propIndent}  active_bg_color: ${quoteYaml(entity.props.active_bg_color)}`);
   }
 }
 
@@ -469,6 +474,7 @@ export function normalizeEntity(entity, canvasWidth = BOARD_CONFIGS.nextion_35.w
         props.tile_icon_position || props.icon_position || props.icon_align || LIGHT_TILE_ICON_POSITION_DEFAULT
       ),
       color_temp: !!(props.color_temp ?? props.colorTemp ?? false),
+      active_bg_color: normalizeOptionalColor(props.active_bg_color || props.active_color || props.on_color),
     },
   };
 }
@@ -531,7 +537,7 @@ export function normalizeType(value) {
 
 export function normalizeStyle(type, value) {
   if (type === "multi_switch") {
-    return MULTI_SWITCH_STYLE_TILE;
+    return value === MULTI_SWITCH_STYLE_LIST ? MULTI_SWITCH_STYLE_LIST : MULTI_SWITCH_STYLE_TILE;
   }
   if (type === "switch") {
     return value === SWITCH_STYLE_BUTTON ? SWITCH_STYLE_BUTTON : SWITCH_STYLE_TOGGLE;
@@ -581,6 +587,10 @@ export function defaultHeightForType(type, style = SWITCH_STYLE_TOGGLE, props = 
     return DEFAULT_THERMO_HEIGHT;
   }
   if (type === "multi_switch") {
+    if (style === MULTI_SWITCH_STYLE_LIST) {
+      const enabledCount = getEnabledSwitchIndices(entity).length;
+      return Math.max(enabledCount * 44 + 48, DEFAULT_MULTI_SWITCH_HEIGHT);
+    }
     return DEFAULT_MULTI_SWITCH_HEIGHT;
   }
   if (type === "light") {

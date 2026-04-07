@@ -111,6 +111,8 @@ const elements = {
   multiSwitchEnabledInputs: [1, 2, 3, 4].map((index) => document.getElementById(`field-multi-enabled-${index}`)),
   multiSwitchEntityInputs: [1, 2, 3, 4].map((index) => document.getElementById(`field-multi-entityid-${index}`)),
   multiSwitchTitleInputs: [1, 2, 3, 4].map((index) => document.getElementById(`field-multi-title-${index}`)),
+  activeBgColorFields: document.getElementById("active-bg-color-fields"),
+  fieldActiveBgColor: document.getElementById("field-active-bg-color"),
 };
 
 elements.addEntityBtn.addEventListener("click", () => {
@@ -285,6 +287,7 @@ elements.deleteBtn.addEventListener("click", () => {
   elements.fieldWidth,
   elements.fieldHeight,
   elements.fieldColorTemp,
+  elements.fieldActiveBgColor,
   ...elements.multiSwitchEnabledInputs,
   ...elements.multiSwitchEntityInputs,
   ...elements.multiSwitchTitleInputs,
@@ -540,6 +543,10 @@ function handleInspectorChange() {
     );
   }
 
+  if (elements.fieldActiveBgColor) {
+    entity.props.active_bg_color = htmlColorToYaml(elements.fieldActiveBgColor.value);
+  }
+
   const maxX = Math.max(0, state.canvasWidth - entity.props.width);
   const maxY = Math.max(0, state.canvasHeight - entity.props.height);
   const pendingX = readPendingNumber(elements.fieldX.value);
@@ -584,9 +591,10 @@ function handleInspectorCommit() {
     entity.props.hum_icon = normalizeIconSource(elements.fieldHumIcon.value);
   }
   if (entity.type === "light") {
-    entity.props.icon = normalizeIconSource(elements.fieldLightIcon.value);
-    entity.props.tile_icon_position = elements.fieldLightTileIconPosition.value.trim() || entity.props.tile_icon_position;
     entity.props.color_temp = elements.fieldColorTemp.checked;
+  }
+  if (elements.fieldActiveBgColor) {
+    entity.props.active_bg_color = htmlColorToYaml(elements.fieldActiveBgColor.value);
   }
   entity.props.width = clampNumber(
     elements.fieldWidth.value,

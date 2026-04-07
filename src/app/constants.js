@@ -12,6 +12,7 @@ export const SWITCH_STYLE_BUTTON = "button";
 export const SWITCH_BUTTON_HEIGHT = 40;
 export const SWITCH_BUTTON_STYLE_HEIGHT = 88;
 export const MULTI_SWITCH_STYLE_TILE = "tile";
+export const MULTI_SWITCH_STYLE_LIST = "list";
 export const DEFAULT_MULTI_SWITCH_WIDTH = 220;
 export const DEFAULT_MULTI_SWITCH_HEIGHT = 124;
 export const THERMO_HYGROMETER_STYLE_COMPACT = "compact";
@@ -85,6 +86,7 @@ export const ENTITY_CAPABILITIES = {
     ],
     styleOptions: [
       { value: MULTI_SWITCH_STYLE_TILE, label: "tile" },
+      { value: MULTI_SWITCH_STYLE_LIST, label: "list" },
     ],
     createEntity(index) {
       return {
@@ -177,6 +179,13 @@ export function isMultiSwitchChannelEnabled(props, index) {
 export function getMultiSwitchChannelTitle(props, index) {
   const raw = String(props?.[`channel_${index + 1}_title`] || "").trim();
   return raw || `Switch ${index + 1}`;
+}
+
+export function getEnabledSwitchIndices(entity) {
+  if (entity.type === "multi_switch") {
+    return [0, 1, 2, 3].filter((index) => isMultiSwitchChannelEnabled(entity.props, index));
+  }
+  return (entity.entityids || []).map((_, index) => index);
 }
 
 export function getMultiSwitchLayout(width, height, count, hasTitle = true) {

@@ -14,6 +14,8 @@ import {
   LIGHT_STYLE_TILE,
   LIGHT_STYLE_SLIDER,
   LIGHT_TILE_ICON_BUBBLE_OPACITY,
+  MULTI_SWITCH_STYLE_TILE,
+  MULTI_SWITCH_STYLE_LIST,
   SWITCH_BUTTON_HEIGHT,
   SWITCH_STYLE_BUTTON,
   SWITCH_HEIGHT,
@@ -28,6 +30,7 @@ import {
   shouldRenderWidgetTitle,
   usesTopAlignedTitle,
   yamlColorToCss,
+  yamlColorToHtml,
 } from "./spec.js";
 
 export function updateCanvasAppearance(screenBgColor) {
@@ -88,7 +91,7 @@ export function renderCanvas(state, elements, callbacks) {
     if (entity.type === "switch") {
       widget.append(renderSingleSwitchPreview(entity));
     } else if (entity.type === "multi_switch") {
-      widget.append(renderMultiSwitchPreview(entity));
+      widget.append(entity.props.style === MULTI_SWITCH_STYLE_LIST ? renderMultiSwitchListPreview(entity) : renderMultiSwitchPreview(entity));
     } else if (entity.type === "thermo_hygrometer") {
       widget.append(renderThermoHygrometerPreview(entity));
     } else {
@@ -174,6 +177,7 @@ export function renderInspector(entity, elements) {
     multiSwitchEnabledInputs,
     multiSwitchEntityInputs,
     multiSwitchTitleInputs,
+    fieldActiveBgColor,
   } = elements;
 
   const hasEntity = Boolean(entity);
@@ -187,7 +191,7 @@ export function renderInspector(entity, elements) {
   const hasSecondEntity = capability.entityFields.length > 1 && entity.type !== "multi_switch";
   fieldEntityIdRow.classList.toggle("hidden", entity.type === "multi_switch");
   dualFields.classList.toggle("hidden", !hasSecondEntity);
-  switchStyleFields.classList.toggle("hidden", !(entity.type === "switch"));
+  switchStyleFields.classList.toggle("hidden", !(entity.type === "switch" || entity.type === "multi_switch"));
   multiSwitchFields.classList.toggle("hidden", entity.type !== "multi_switch");
   thermoIconFields.classList.toggle("hidden", entity.type !== "thermo_hygrometer");
   lightIconFields.classList.toggle("hidden", entity.type !== "light");
@@ -214,6 +218,12 @@ export function renderInspector(entity, elements) {
   multiSwitchEnabledInputs?.forEach((input, index) => {
     input.checked = isMultiSwitchChannelEnabled(entity.props, index);
   });
+  if (fieldActiveBgColor) {
+    fieldActiveBgColor.value = yamlColorToHtml(entity.props.active_bg_color || (entity.type === "light" ? "#ef920c" : "#d7e9dd"));
+  }
+  const showActiveColor = entity.type === "multi_switch" || (entity.type === "switch" && entity.props.style === SWITCH_STYLE_BUTTON);
+  elements.activeBgColorFields?.classList.toggle("hidden", !showActiveColor);
+
   multiSwitchEntityInputs?.forEach((input, index) => {
     input.value = entity.entityids[index] || "";
   });
@@ -312,6 +322,51 @@ function renderMultiSwitchPreview(entity) {
     label.textContent = getMultiSwitchChannelTitle(entity.props, channel.index);
     button.append(label);
     group.append(button);
+  });
+
+  return group;
+}
+
+function renderMultiSwitchListPreview(entity) {
+  const group = document.createElement("div");
+  group.className = "multi-switch-list-group";
+
+  const channels = entity.entityids
+    .map((entityId, index) => ({ entityId, index }))
+    .filter(({ index }) => isMultiSwitchChannelEnabled(entity.props, index));
+
+  if (!channels.length) {
+    const empty = document.createElement("div");
+    empty.className = "multi-switch-empty";
+    empty.textContent = "Enable channels";
+    group.append(empty);
+    return group;
+  }
+
+  channels.forEach((channel, index) => {
+    const item = document.createElement("div");
+    item.className = "multi-switch-list-item";
+    item.style.top = `${index * 44 + 44}px`;
+    item.style.left = "16px";
+    item.style.width = `${entity.props.width - 32}px`;
+    item.style.height = "40px";
+
+    const label = document.createElement("span");
+    label.className = "multi-switch-list-label";
+    label.textContent = getMultiSwitchChannelTitle(entity.props, channel.index);
+
+    const switchShell = document.createElement("div");
+    switchShell.className = "widget-switch";
+    switchShell.style.right = "0px";
+    switchShell.style.width = `${SWITCH_WIDTH}px`;
+    switchShell.style.height = `${SWITCH_HEIGHT}px`;
+
+    const knob = document.createElement("span");
+    knob.className = "widget-switch-knob";
+    switchShell.append(knob);
+
+    item.append(label, switchShell);
+    group.append(item);
   });
 
   return group;
