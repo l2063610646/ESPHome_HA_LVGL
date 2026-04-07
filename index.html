@@ -178,6 +178,7 @@
               <span>Type</span>
               <select id="field-type">
                 <option value="switch">switch</option>
+                <option value="multi_switch">multi_switch</option>
                 <option value="thermo_hygrometer">thermo_hygrometer</option>
                 <option value="light">light</option>
               </select>
@@ -191,6 +192,45 @@
                 <span id="field-entityid-2-label">Entity ID 2</span>
                 <input id="field-entityid-2" type="text" />
               </label>
+            </div>
+            <div id="multi-switch-fields" class="hidden">
+              <div class="multi-switch-field-grid">
+                <label class="stack multi-switch-field">
+                  <span>Channel 1</span>
+                  <div class="multi-switch-field-row">
+                    <label class="channel-toggle"><input id="field-multi-enabled-1" type="checkbox" /> Enabled</label>
+                    <input id="field-multi-entityid-1" type="text" placeholder="switch.multi_1_1" />
+                    <input id="field-multi-title-1" type="text" placeholder="Switch 1" />
+                  </div>
+                </label>
+                <label class="stack multi-switch-field">
+                  <span>Channel 2</span>
+                  <div class="multi-switch-field-row">
+                    <label class="channel-toggle"><input id="field-multi-enabled-2" type="checkbox" /> Enabled</label>
+                    <input id="field-multi-entityid-2" type="text" placeholder="switch.multi_1_2" />
+                    <input id="field-multi-title-2" type="text" placeholder="Switch 2" />
+                  </div>
+                </label>
+                <label class="stack multi-switch-field">
+                  <span>Channel 3</span>
+                  <div class="multi-switch-field-row">
+                    <label class="channel-toggle"><input id="field-multi-enabled-3" type="checkbox" /> Enabled</label>
+                    <input id="field-multi-entityid-3" type="text" placeholder="switch.multi_1_3" />
+                    <input id="field-multi-title-3" type="text" placeholder="Switch 3" />
+                  </div>
+                </label>
+                <label class="stack multi-switch-field">
+                  <span>Channel 4</span>
+                  <div class="multi-switch-field-row">
+                    <label class="channel-toggle"><input id="field-multi-enabled-4" type="checkbox" /> Enabled</label>
+                    <input id="field-multi-entityid-4" type="text" placeholder="switch.multi_1_4" />
+                    <input id="field-multi-title-4" type="text" placeholder="Switch 4" />
+                  </div>
+                </label>
+              </div>
+              <p class="hint">
+                Up to four switch channels are supported. Enabled channels are shown in the preview and generated YAML.
+              </p>
             </div>
             <label class="stack">
               <span>Title</span>

@@ -1,6 +1,8 @@
 import {
   BOARD_CONFIGS,
   DEFAULT_HEIGHT,
+  DEFAULT_MULTI_SWITCH_HEIGHT,
+  DEFAULT_MULTI_SWITCH_WIDTH,
   LIGHT_DEFAULT_ICON_SIZE,
   DEFAULT_LIGHT_HEIGHT,
   DEFAULT_LIGHT_WIDTH,
@@ -17,7 +19,10 @@ import {
   LIGHT_STYLE_ICON,
   LIGHT_STYLE_TILE,
   LIGHT_STYLE_SLIDER,
+  MULTI_SWITCH_STYLE_TILE,
+  getMultiSwitchChannelTitle,
   normalizeLightTileIconPosition,
+  isMultiSwitchChannelEnabled,
   SWITCH_BUTTON_STYLE_HEIGHT,
   SWITCH_STYLE_BUTTON,
   SWITCH_STYLE_TOGGLE,
@@ -149,8 +154,9 @@ function appendEntityYaml(lines, entity, indent = "  ") {
     lines.push(`${indent}- entityid: ${quoteYaml(entity.entityids[0])}`);
   } else {
     lines.push(`${indent}- entityids:`);
-    lines.push(`${propIndent}    - ${quoteYaml(entity.entityids[0])}`);
-    lines.push(`${propIndent}    - ${quoteYaml(entity.entityids[1])}`);
+    entity.entityids.forEach((entityId) => {
+      lines.push(`${propIndent}    - ${quoteYaml(entityId)}`);
+    });
   }
   lines.push(`${propIndent}type: ${entity.type}`);
   lines.push(`${propIndent}props:`);
@@ -177,6 +183,12 @@ function appendEntityYaml(lines, entity, indent = "  ") {
     }
     if (entity.props.color_temp) {
       lines.push(`${propIndent}  color_temp: true`);
+    }
+  }
+  if (entity.type === "multi_switch") {
+    for (let index = 0; index < 4; index += 1) {
+      lines.push(`${propIndent}  channel_${index + 1}_title: ${quoteYaml(getMultiSwitchChannelTitle(entity.props, index))}`);
+      lines.push(`${propIndent}  channel_${index + 1}_enabled: ${isMultiSwitchChannelEnabled(entity.props, index) ? "true" : "false"}`);
     }
   }
 }
@@ -436,6 +448,14 @@ export function normalizeEntity(entity, canvasWidth = BOARD_CONFIGS.nextion_35.w
       height,
       title: String(props.title || defaultTitleForType(type, entityids)),
       style,
+      channel_1_title: type === "multi_switch" ? String(props.channel_1_title ?? props.channel1_title ?? "Switch 1") : "",
+      channel_2_title: type === "multi_switch" ? String(props.channel_2_title ?? props.channel2_title ?? "Switch 2") : "",
+      channel_3_title: type === "multi_switch" ? String(props.channel_3_title ?? props.channel3_title ?? "Switch 3") : "",
+      channel_4_title: type === "multi_switch" ? String(props.channel_4_title ?? props.channel4_title ?? "Switch 4") : "",
+      channel_1_enabled: type === "multi_switch" ? !!(props.channel_1_enabled ?? props.channel1_enabled ?? true) : false,
+      channel_2_enabled: type === "multi_switch" ? !!(props.channel_2_enabled ?? props.channel2_enabled ?? true) : false,
+      channel_3_enabled: type === "multi_switch" ? !!(props.channel_3_enabled ?? props.channel3_enabled ?? false) : false,
+      channel_4_enabled: type === "multi_switch" ? !!(props.channel_4_enabled ?? props.channel4_enabled ?? false) : false,
       temp_icon: normalizeIconSource(
         props.temp_icon || props.temp_image || props.temperature_icon || THERMO_ICON_PATHS.temp
       ),
@@ -500,6 +520,9 @@ export function normalizeType(value) {
   if (value === "thermo_hygrometer") {
     return "thermo_hygrometer";
   }
+  if (value === "multi_switch") {
+    return "multi_switch";
+  }
   if (value === "light") {
     return "light";
   }
@@ -507,6 +530,9 @@ export function normalizeType(value) {
 }
 
 export function normalizeStyle(type, value) {
+  if (type === "multi_switch") {
+    return MULTI_SWITCH_STYLE_TILE;
+  }
   if (type === "switch") {
     return value === SWITCH_STYLE_BUTTON ? SWITCH_STYLE_BUTTON : SWITCH_STYLE_TOGGLE;
   }
@@ -522,6 +548,9 @@ export function defaultTitleForType(type, entityids) {
   if (type === "thermo_hygrometer") {
     return "Temperature & Humidity";
   }
+  if (type === "multi_switch") {
+    return "Switch Group";
+  }
   if (type === "light") {
     return deriveTitle(entityids[0]);
   }
@@ -536,6 +565,9 @@ export function defaultWidthForType(type, style) {
   if (type === "thermo_hygrometer") {
     return DEFAULT_THERMO_WIDTH;
   }
+  if (type === "multi_switch") {
+    return DEFAULT_MULTI_SWITCH_WIDTH;
+  }
   if (type === "light") {
     if (style === LIGHT_STYLE_TILE) return 120;
     if (style === LIGHT_STYLE_SLIDER) return 220;
@@ -547,6 +579,9 @@ export function defaultWidthForType(type, style) {
 export function defaultHeightForType(type, style = SWITCH_STYLE_TOGGLE, props = {}) {
   if (type === "thermo_hygrometer") {
     return DEFAULT_THERMO_HEIGHT;
+  }
+  if (type === "multi_switch") {
+    return DEFAULT_MULTI_SWITCH_HEIGHT;
   }
   if (type === "light") {
     if (style === LIGHT_STYLE_TILE) return 120;
@@ -560,6 +595,9 @@ export function minWidthForType(type, style) {
   if (type === "thermo_hygrometer") {
     return 180;
   }
+  if (type === "multi_switch") {
+    return 180;
+  }
   if (type === "light") {
     if (style === LIGHT_STYLE_TILE) return 80;
     if (style === LIGHT_STYLE_SLIDER) return 180;
@@ -571,6 +609,9 @@ export function minWidthForType(type, style) {
 export function minHeightForType(type, style = SWITCH_STYLE_TOGGLE, props = {}) {
   if (type === "thermo_hygrometer") {
     return DEFAULT_THERMO_HEIGHT;
+  }
+  if (type === "multi_switch") {
+    return 104;
   }
   if (type === "light") {
     if (style === LIGHT_STYLE_SLIDER) return props.color_temp ? 110 : 80;
@@ -647,7 +688,7 @@ export function normalizeIconSource(value) {
 }
 
 export function usesTopAlignedTitle(entity) {
-  return entity.type === "switch" && entity.props.style === SWITCH_STYLE_BUTTON;
+  return (entity.type === "switch" && entity.props.style === SWITCH_STYLE_BUTTON) || entity.type === "multi_switch";
 }
 
 export function shouldRenderWidgetTitle(entity) {

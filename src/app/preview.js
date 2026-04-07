@@ -3,7 +3,10 @@ import {
   DEFAULT_BUTTON_BG_COLOR,
   DEFAULT_LABEL_PAD_LEFT,
   DEFAULT_SWITCH_PAD_RIGHT,
+  getMultiSwitchLayout,
+  getMultiSwitchChannelTitle,
   getLightTileLayout,
+  isMultiSwitchChannelEnabled,
   LIGHT_ICON_PATHS,
   LIGHT_TILE_ICON_POSITION_DEFAULT,
   LIGHT_TILE_ICON_POSITION_OPTIONS,
@@ -84,6 +87,8 @@ export function renderCanvas(state, elements, callbacks) {
 
     if (entity.type === "switch") {
       widget.append(renderSingleSwitchPreview(entity));
+    } else if (entity.type === "multi_switch") {
+      widget.append(renderMultiSwitchPreview(entity));
     } else if (entity.type === "thermo_hygrometer") {
       widget.append(renderThermoHygrometerPreview(entity));
     } else {
@@ -144,10 +149,12 @@ export function renderInspector(entity, elements) {
     inspectorForm,
     dualFields,
     switchStyleFields,
+    multiSwitchFields,
     thermoIconFields,
     lightIconFields,
     lightTilePositionFields,
     fieldType,
+    fieldEntityIdRow,
     fieldEntityIdLabel,
     fieldEntityId,
     fieldEntityId2Label,
@@ -164,6 +171,9 @@ export function renderInspector(entity, elements) {
     fieldLightTileIconPosition,
     lightSliderFields,
     fieldColorTemp,
+    multiSwitchEnabledInputs,
+    multiSwitchEntityInputs,
+    multiSwitchTitleInputs,
   } = elements;
 
   const hasEntity = Boolean(entity);
@@ -174,9 +184,11 @@ export function renderInspector(entity, elements) {
   }
 
   const capability = getEntityCapability(entity.type);
-  const hasSecondEntity = capability.entityFields.length > 1;
+  const hasSecondEntity = capability.entityFields.length > 1 && entity.type !== "multi_switch";
+  fieldEntityIdRow.classList.toggle("hidden", entity.type === "multi_switch");
   dualFields.classList.toggle("hidden", !hasSecondEntity);
-  switchStyleFields.classList.toggle("hidden", false);
+  switchStyleFields.classList.toggle("hidden", !(entity.type === "switch"));
+  multiSwitchFields.classList.toggle("hidden", entity.type !== "multi_switch");
   thermoIconFields.classList.toggle("hidden", entity.type !== "thermo_hygrometer");
   lightIconFields.classList.toggle("hidden", entity.type !== "light");
   lightTilePositionFields.classList.toggle("hidden", !(entity.type === "light" && (entity.props.style === LIGHT_STYLE_TILE || entity.props.style === LIGHT_STYLE_SLIDER)));
@@ -199,6 +211,15 @@ export function renderInspector(entity, elements) {
   fieldLightIcon.value = entity.props.icon ?? "";
   fieldLightTileIconPosition.value = entity.props.tile_icon_position ?? LIGHT_TILE_ICON_POSITION_DEFAULT;
   fieldColorTemp.checked = entity.props.color_temp ?? false;
+  multiSwitchEnabledInputs?.forEach((input, index) => {
+    input.checked = isMultiSwitchChannelEnabled(entity.props, index);
+  });
+  multiSwitchEntityInputs?.forEach((input, index) => {
+    input.value = entity.entityids[index] || "";
+  });
+  multiSwitchTitleInputs?.forEach((input, index) => {
+    input.value = getMultiSwitchChannelTitle(entity.props, index);
+  });
   updateThermoIconInspectorPreview(elements);
   updateLightIconInspectorPreview(elements);
 }
@@ -257,6 +278,43 @@ function renderSingleButtonSwitchPreview(entity) {
   label.textContent = "Toggle";
   button.append(label);
   return button;
+}
+
+function renderMultiSwitchPreview(entity) {
+  const group = document.createElement("div");
+  group.className = "multi-switch-group";
+
+  const channels = entity.entityids
+    .map((entityId, index) => ({ entityId, index }))
+    .filter(({ index }) => isMultiSwitchChannelEnabled(entity.props, index));
+
+  const layout = getMultiSwitchLayout(entity.props.width, entity.props.height, channels.length, true);
+
+  if (!channels.length) {
+    const empty = document.createElement("div");
+    empty.className = "multi-switch-empty";
+    empty.textContent = "Enable channels";
+    group.append(empty);
+    return group;
+  }
+
+  channels.forEach((channel, index) => {
+    const placement = layout.items[index];
+    const button = document.createElement("div");
+    button.className = "multi-switch-channel";
+    button.style.left = `${placement.x}px`;
+    button.style.top = `${placement.y}px`;
+    button.style.width = `${placement.width}px`;
+    button.style.height = `${placement.height}px`;
+
+    const label = document.createElement("span");
+    label.className = "multi-switch-channel-label";
+    label.textContent = getMultiSwitchChannelTitle(entity.props, channel.index);
+    button.append(label);
+    group.append(button);
+  });
+
+  return group;
 }
 
 function renderThermoHygrometerPreview(entity) {

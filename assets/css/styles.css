@@ -298,6 +298,36 @@ h2 {
   margin-top: 14px;
 }
 
+.multi-switch-field-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.multi-switch-field {
+  padding: 12px;
+  border: 1px solid rgba(31, 41, 51, 0.08);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.multi-switch-field-row {
+  display: grid;
+  gap: 10px;
+}
+
+.channel-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.channel-toggle input {
+  width: auto;
+}
+
 .grid.two {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -452,6 +482,51 @@ textarea {
   font-weight: 500;
   color: #24323a;
   letter-spacing: 0;
+}
+
+.multi-switch-group {
+  position: absolute;
+  inset: 0;
+}
+
+.multi-switch-channel {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border-radius: 12px;
+  border: 1px solid #d7ddd9;
+  background: #eef3f0;
+  overflow: hidden;
+}
+
+.multi-switch-channel-label {
+  display: block;
+  max-width: calc(100% - 12px);
+  font-size: var(--preview-font-body-size);
+  font-weight: 500;
+  color: #24323a;
+  text-align: center;
+  line-height: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: clip;
+}
+
+.multi-switch-empty {
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  top: 44px;
+  bottom: 16px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  border: 1px dashed #c4d0cb;
+  color: #7b8a92;
+  font-size: 13px;
+  background: rgba(238, 243, 240, 0.55);
 }
 
 .thermo-group {

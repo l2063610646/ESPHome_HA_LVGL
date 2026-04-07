@@ -47,6 +47,8 @@ Internally, the editor stores page state in a compact YAML-friendly shape:
   Ordered list of HMI screens. Each screen has `name` and `entities`.
 - `type: switch`
   Uses one `entityid`.
+- `type: multi_switch`
+  Uses up to four switch `entityids`. Visibility is controlled per channel with `props.channel_1_enabled` through `props.channel_4_enabled`.
 - `type: light`
   Uses one `entityid`.
 - `type: thermo_hygrometer`
@@ -58,6 +60,7 @@ Supported styles:
 
 - `switch.props.style: toggle`
 - `switch.props.style: button`
+- `multi_switch.props.style: tile`
 - `light.props.style: icon`
 - `light.props.style: tile`
 - `light.props.tile_icon_position`

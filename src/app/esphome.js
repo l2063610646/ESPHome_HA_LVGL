@@ -1,6 +1,9 @@
 import {
   DEFAULT_BUTTON_BG_COLOR,
+  getMultiSwitchChannelTitle,
+  getMultiSwitchLayout,
   getLightTileLayout,
+  isMultiSwitchChannelEnabled,
   LIGHT_ICON_PATHS,
   LIGHT_STYLE_TILE,
   LIGHT_STYLE_SLIDER,
@@ -99,6 +102,15 @@ function getWidgetId(entity, index) {
 
 function getValueLabelId(entity, index) {
   return `label_${getEntitySlug(entity)}_${index + 1}`;
+}
+
+function getEnabledSwitchIndices(entity) {
+  if (entity.type === "multi_switch") {
+    return entity.entityids
+      .map((_, index) => index)
+      .filter((index) => isMultiSwitchChannelEnabled(entity.props, index));
+  }
+  return entity.entityids.map((_, index) => index);
 }
 
 function getThermoImageId(entity, kind) {
@@ -488,8 +500,8 @@ lvgl:
 
 function renderSwitchBlock(entities) {
   return entities
-      .filter((entity) => entity.type === "switch")
-      .flatMap((entity) => entity.entityids.map((_, index) => renderSwitchComponent(entity, index)))
+      .filter((entity) => entity.type === "switch" || entity.type === "multi_switch")
+      .flatMap((entity) => getEnabledSwitchIndices(entity).map((index) => renderSwitchComponent(entity, index)))
       .join("\n");
 }
 
@@ -786,6 +798,9 @@ ${onStateYaml}`;
 }
 
 function renderWidget(entity) {
+  if (entity.type === "multi_switch") {
+    return renderMultiSwitchWidget(entity);
+  }
   if (entity.type === "switch") {
     return entity.props.style === "button"
         ? renderSingleSwitchButtonWidget(entity)
@@ -795,6 +810,93 @@ function renderWidget(entity) {
     return renderLightWidget(entity);
   }
   return renderThermoHygrometerWidget(entity);
+}
+
+function renderMultiSwitchWidget(entity) {
+  const enabledIndices = getEnabledSwitchIndices(entity);
+  const layout = getMultiSwitchLayout(entity.props.width, entity.props.height, enabledIndices.length, true);
+  const widgets = enabledIndices.length
+    ? enabledIndices.map((entityIndex, visualIndex) => {
+      const item = layout.items[visualIndex];
+      return `      - button:
+          id: ${getWidgetId(entity, entityIndex)}
+          x: ${item.x}
+          y: ${item.y}
+          width: ${item.width}
+          height: ${item.height}
+          checkable: true
+          radius: 12
+          pad_all: 0
+          border_width: 1
+          border_color: 0xD7DDD9
+          bg_opa: COVER
+          bg_color: 0xEEF3F0
+          checked:
+            bg_color: 0xDCE9E3
+          shadow_width: 0
+          scrollable: false
+          scrollbar_mode: "OFF"
+          state:
+            checked: !lambda return id(${getHaSwitchId(entity, entityIndex)}).state;
+          widgets:
+            - label:
+                align: CENTER
+                text_font: ${UI_FONT_BODY}
+                text: ${quoteYaml(getMultiSwitchChannelTitle(entity.props, entityIndex))}
+                text_color: 0x24323A
+          on_change:
+            then:
+              - if:
+                  condition:
+                    lambda: return x;
+                  then:
+                    - switch.turn_on: ${getHaSwitchId(entity, entityIndex)}
+                  else:
+                    - switch.turn_off: ${getHaSwitchId(entity, entityIndex)}`;
+    }).join("\n")
+    : `      - obj:
+          x: 16
+          y: ${layout.top}
+          width: ${Math.max(entity.props.width - 32, 72)}
+          height: ${Math.max(entity.props.height - layout.top - 16, 40)}
+          radius: 12
+          border_width: 1
+          border_color: 0xC4D0CB
+          bg_opa: TRANSP
+          scrollable: false
+          scrollbar_mode: "OFF"
+          widgets:
+            - label:
+                align: CENTER
+                text_font: ${UI_FONT_BODY}
+                text: "Enable channels"
+                text_color: 0x7B8A92`;
+
+  return `- obj:
+    id: ${getContainerId(entity)}
+    x: ${entity.props.x}
+    y: ${entity.props.y}
+    width: ${entity.props.width}
+    height: ${entity.props.height}
+    radius: 14
+    border_width: 1
+    border_color: 0xD7DDD9
+    pad_all: 0
+    bg_opa: COVER
+    bg_color: 0xF8FBF9
+    shadow_width: 4
+    shadow_color: 0x1F2933
+    shadow_opa: 6%
+    scrollable: false
+    scrollbar_mode: "OFF"
+    widgets:
+      - label:
+          align: TOP_LEFT
+          x: 16
+          y: 16
+          text_font: ${UI_FONT_BODY}
+          text: ${quoteYaml(entity.props.title)}
+${widgets}`;
 }
 
 function renderSingleSwitchToggleWidget(entity) {

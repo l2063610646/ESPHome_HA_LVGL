@@ -79,6 +79,7 @@ const elements = {
   wifiPasswordInput: document.getElementById("wifi-password"),
   canvasResTitle: document.getElementById("canvas-res-title"),
   fieldType: document.getElementById("field-type"),
+  fieldEntityIdRow: document.getElementById("field-entityid").closest("label"),
   fieldEntityIdLabel: document.getElementById("field-entityid-label"),
   fieldEntityId: document.getElementById("field-entityid"),
   fieldEntityId2Label: document.getElementById("field-entityid-2-label"),
@@ -91,6 +92,7 @@ const elements = {
   fieldHeight: document.getElementById("field-height"),
   dualFields: document.getElementById("dual-fields"),
   switchStyleFields: document.getElementById("switch-style-fields"),
+  multiSwitchFields: document.getElementById("multi-switch-fields"),
   thermoIconFields: document.getElementById("thermo-icon-fields"),
   lightIconFields: document.getElementById("light-icon-fields"),
   lightTilePositionFields: document.getElementById("light-tile-position-fields"),
@@ -106,6 +108,9 @@ const elements = {
   humIconPreviewFallback: document.getElementById("hum-icon-preview-fallback"),
   lightIconPreviewImg: document.getElementById("light-icon-preview-img"),
   lightIconPreviewFallback: document.getElementById("light-icon-preview-fallback"),
+  multiSwitchEnabledInputs: [1, 2, 3, 4].map((index) => document.getElementById(`field-multi-enabled-${index}`)),
+  multiSwitchEntityInputs: [1, 2, 3, 4].map((index) => document.getElementById(`field-multi-entityid-${index}`)),
+  multiSwitchTitleInputs: [1, 2, 3, 4].map((index) => document.getElementById(`field-multi-title-${index}`)),
 };
 
 elements.addEntityBtn.addEventListener("click", () => {
@@ -280,6 +285,9 @@ elements.deleteBtn.addEventListener("click", () => {
   elements.fieldWidth,
   elements.fieldHeight,
   elements.fieldColorTemp,
+  ...elements.multiSwitchEnabledInputs,
+  ...elements.multiSwitchEntityInputs,
+  ...elements.multiSwitchTitleInputs,
 ].forEach((input) => {
   input.addEventListener("input", handleInspectorChange);
   input.addEventListener("change", handleInspectorCommit);
@@ -495,6 +503,16 @@ function handleInspectorChange() {
       entity.entityids[1] = trimmedEntityId2;
     }
   }
+  if (entity.type === "multi_switch") {
+    elements.multiSwitchEntityInputs.forEach((input, index) => {
+      const trimmedEntityId = input.value.trim();
+      if (trimmedEntityId) {
+        entity.entityids[index] = trimmedEntityId;
+      }
+      entity.props[`channel_${index + 1}_title`] = elements.multiSwitchTitleInputs[index].value;
+      entity.props[`channel_${index + 1}_enabled`] = elements.multiSwitchEnabledInputs[index].checked;
+    });
+  }
 
   entity.props.title = elements.fieldTitle.value;
   if (entity.type === "thermo_hygrometer") {
@@ -546,11 +564,21 @@ function handleInspectorCommit() {
   entity.type = normalizeType(elements.fieldType.value);
   const draft = normalizeEntity(createEntityDraft(entity.type, state.entities.length + 1), state.canvasWidth, state.canvasHeight);
   entity.entityids = draft.entityids.map((fallback, index) => {
-    const inputValue = index === 0 ? elements.fieldEntityId.value.trim() : elements.fieldEntityId2.value.trim();
+    const inputValue = entity.type === "multi_switch"
+      ? elements.multiSwitchEntityInputs[index]?.value.trim()
+      : index === 0
+        ? elements.fieldEntityId.value.trim()
+        : elements.fieldEntityId2.value.trim();
     return inputValue || entity.entityids[index] || fallback;
   });
   entity.props.style = normalizeStyle(entity.type, elements.fieldStyle.value || entity.props.style);
   entity.props.title = elements.fieldTitle.value.trim() || defaultTitleForEntity(entity);
+  if (entity.type === "multi_switch") {
+    elements.multiSwitchEnabledInputs.forEach((input, index) => {
+      entity.props[`channel_${index + 1}_title`] = elements.multiSwitchTitleInputs[index].value.trim() || `Switch ${index + 1}`;
+      entity.props[`channel_${index + 1}_enabled`] = input.checked;
+    });
+  }
   if (entity.type === "thermo_hygrometer") {
     entity.props.temp_icon = normalizeIconSource(elements.fieldTempIcon.value);
     entity.props.hum_icon = normalizeIconSource(elements.fieldHumIcon.value);
