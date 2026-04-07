@@ -605,7 +605,23 @@ function renderSensorBlock(entities) {
           if(fill_w < 0) fill_w = 0;
           if(fill_w > w) fill_w = w;
           int pill_x = fill_w - 10;
-          return pill_x < 0 ? 0 : pill_x;`);
+          return pill_x < 0 ? 0 : pill_x;
+    - lvgl.obj.update:
+        id: ${getWidgetId(entity, 0)}_wrapper
+        bg_color: !lambda |-
+          float val = lv_slider_get_value(id(${getWidgetId(entity, 0)}_ct)) / 100.0f;
+          int r = (int)(213 + (255 - 213) * val);
+          int g = (int)(213 + (137 - 213) * val);
+          int b = (int)(225 + (14 - 225) * val);
+          return lv_color_make(r, g, b);
+    - lvgl.obj.update:
+        id: ${getWidgetId(entity, 0)}_orange_fill
+        bg_color: !lambda |-
+          float val = lv_slider_get_value(id(${getWidgetId(entity, 0)}_ct)) / 100.0f;
+          int r = (int)(213 + (255 - 213) * val);
+          int g = (int)(213 + (137 - 213) * val);
+          int b = (int)(225 + (14 - 225) * val);
+          return lv_color_make(r, g, b);`);
         }
         
         return blocks;
@@ -707,10 +723,20 @@ function renderLightStateTextSensorComponent(entity) {
               
     let onStateYaml = `          - lvgl.obj.update:
               id: ${getWidgetId(entity, 0)}_wrapper
-              bg_color: 0xFEEDBD
+              bg_color: !lambda |-
+                float val = ${entity.props.color_temp ? `(float)lv_slider_get_value(id(${getWidgetId(entity, 0)}_ct)) / 100.0f` : `0.5f`};
+                int r = (int)(213 + (255 - 213) * val);
+                int g = (int)(213 + (137 - 213) * val);
+                int b = (int)(225 + (14 - 225) * val);
+                return lv_color_make(r, g, b);
           - lvgl.obj.update:
               id: ${getWidgetId(entity, 0)}_orange_fill
-              bg_color: 0xFDBB13`;
+              bg_color: !lambda |-
+                float val = ${entity.props.color_temp ? `(float)lv_slider_get_value(id(${getWidgetId(entity, 0)}_ct)) / 100.0f` : `0.5f`};
+                int r = (int)(213 + (255 - 213) * val);
+                int g = (int)(213 + (137 - 213) * val);
+                int b = (int)(225 + (14 - 225) * val);
+                return lv_color_make(r, g, b);`;
 
     if (entity.props.color_temp) {
       offStateYaml += `
@@ -769,11 +795,22 @@ ${offStateYaml}
               src: ${getLightImageId(entity)}_on
           - lvgl.obj.update:
               id: ${getWidgetId(entity, 0)}_icon
-              image_recolor: 0xFDBB13
+              image_recolor: !lambda |-
+                float val = ${entity.props.color_temp ? `(float)lv_slider_get_value(id(${getWidgetId(entity, 0)}_ct)) / 100.0f` : `0.5f`};
+                int r = (int)(213 + (255 - 213) * val);
+                int g = (int)(213 + (137 - 213) * val);
+                int b = (int)(225 + (14 - 225) * val);
+                return lv_color_make(r, g, b);
               image_recolor_opa: COVER
           - lvgl.obj.update:
               id: ${getWidgetId(entity, 0)}_bubble
-              bg_color: 0xFEEDBD
+              bg_color: !lambda |-
+                float val = ${entity.props.color_temp ? `(float)lv_slider_get_value(id(${getWidgetId(entity, 0)}_ct)) / 100.0f` : `0.5f`};
+                int r = (int)(213 + (255 - 213) * val);
+                int g = (int)(213 + (137 - 213) * val);
+                int b = (int)(225 + (14 - 225) * val);
+                return lv_color_make(r, g, b);
+              bg_opa: 30%
 ${onStateYaml}`;
   }
 
@@ -1339,7 +1376,7 @@ function renderLightSliderWidget(entity) {
                 id: ${getWidgetId(entity, 0)}
                 width: 100%
                 height: 100%
-                min_value: 0
+                min_value: 1
                 max_value: 100
                 radius: 12
                 bg_opa: TRANSP
@@ -1381,20 +1418,11 @@ function renderLightSliderWidget(entity) {
                           if(fill_w > w) fill_w = w;
                           int pill_x = fill_w - 10;
                           return pill_x < 0 ? 0 : pill_x;
-                    - if:
-                        condition:
-                          lambda: "return x == 0;"
-                        then:
-                          - homeassistant.service:
-                              service: light.turn_off
-                              data:
-                                entity_id: ${quoteYaml(entity.entityids[0])}
-                        else:
-                              - homeassistant.service:
-                                  service: light.turn_on
-                                  data:
-                                    entity_id: ${quoteYaml(entity.entityids[0])}
-                                    brightness_pct: !lambda "return (int)x;"`;
+                    - homeassistant.service:
+                        service: light.turn_on
+                        data:
+                          entity_id: ${quoteYaml(entity.entityids[0])}
+                          brightness_pct: !lambda "return (int)x;"`;
 
   if (entity.props.color_temp) {
     yaml += `
