@@ -38,7 +38,7 @@ The old Python build pipeline is not part of the normal workflow anymore.
   App styling and preview styling.
 - `mdi:thermometer`
   Example default temperature icon.
-- `https://l2063610646.github.io/tools/humi.png`
+- `https://l2063610646.github.io/tools/hum.png`
   Example default humidity icon.
 
 ## Current Data Model

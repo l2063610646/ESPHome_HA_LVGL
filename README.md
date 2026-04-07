@@ -32,7 +32,7 @@ Future AI collaborators should read `AGENTS.md` first.
   Editor UI and preview styling.
 - `mdi:thermometer`
   Default temperature icon example.
-- `https://l2063610646.github.io/tools/humi.png`
+- `https://l2063610646.github.io/tools/hum.png`
   Default humidity icon example.
 
 ## Current Data Model
@@ -90,7 +90,7 @@ entities:
     props:
       style: "compact"
       temp_icon: "mdi:thermometer"
-      hum_icon: "https://l2063610646.github.io/tools/humi.png"
+      hum_icon: "https://l2063610646.github.io/tools/hum.png"
       x: 24
       y: 130
       width: 220
@@ -144,6 +144,7 @@ Treat generated LVGL as the source of truth.
 - Keep the web preview close to the generated card spacing, borders, radius, and control layout.
 - Avoid browser-only effects that LVGL cannot match closely.
 - If exact parity is not possible, simplify the web preview toward LVGL rather than making the preview more decorative.
+- The browser editor preview and generated LVGL output are intentionally non-scrollable; content that does not fit the current screen should remain clipped rather than scroll.
 
 ## Notes
 

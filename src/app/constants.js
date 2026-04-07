@@ -39,7 +39,7 @@ export const DEFAULT_LIGHT_WIDTH = Math.max(LIGHT_DEFAULT_ICON_SIZE, LIGHT_LABEL
 export const DEFAULT_LIGHT_HEIGHT = LIGHT_DEFAULT_ICON_SIZE + LIGHT_LABEL_HEIGHT + LIGHT_PAD_ALL * 2 + LIGHT_PAD_ROW;
 export const THERMO_ICON_PATHS = {
   temp: "mdi:thermometer",
-  hum: "https://l2063610646.github.io/ESPHome_HA_LVGL/assets/images/humi.png",
+  hum: "https://l2063610646.github.io/ESPHome_HA_LVGL/assets/images/hum.png",
 };
 export const LIGHT_ICON_PATHS = {
   on: "https://l2063610646.github.io/ESPHome_HA_LVGL/assets/images/light.png",

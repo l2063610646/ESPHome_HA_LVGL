@@ -774,6 +774,7 @@ function renderSingleSwitchToggleWidget(entity) {
     shadow_width: 4
     shadow_color: 0x1F2933
     shadow_opa: 6%
+    scrollable: false
     scrollbar_mode: "OFF"
     widgets:
       - label:
@@ -817,6 +818,7 @@ function renderSingleSwitchButtonWidget(entity) {
     shadow_width: 4
     shadow_color: 0x1F2933
     shadow_opa: 6%
+    scrollable: false
     scrollbar_mode: "OFF"
     widgets:
       - label:
@@ -841,6 +843,7 @@ function renderSingleSwitchButtonWidget(entity) {
           checked:
             bg_color: ${buttonActiveBgColor(entity)}
           shadow_width: 0
+          scrollable: false
           state:
             checked: !lambda return id(${getHaSwitchId(entity, 0)}).state;
           widgets:
@@ -877,6 +880,7 @@ function renderThermoHygrometerWidget(entity) {
     shadow_width: 4
     shadow_color: 0x1F2933
     shadow_opa: 6%
+    scrollable: false
     scrollbar_mode: "OFF"
     widgets:
       - obj:
@@ -894,6 +898,7 @@ function renderThermoHygrometerWidget(entity) {
           bg_opa: COVER
           bg_color: 0xEEF3F0
           shadow_width: 0
+          scrollable: false
           scrollbar_mode: "OFF"
           widgets:
             - image:
@@ -920,6 +925,7 @@ function renderThermoHygrometerWidget(entity) {
           bg_opa: COVER
           bg_color: 0xEEF3F0
           shadow_width: 0
+          scrollable: false
           scrollbar_mode: "OFF"
           widgets:
             - image:
@@ -966,6 +972,7 @@ function renderLightWidget(entity) {
     pressed:
       transform_zoom: 1.1
     shadow_width: 0
+    scrollable: false
     scrollbar_mode: "OFF"
     state:
       checked: !lambda return id(${getHaTextSensorId(entity, 0)}).state == "on";
@@ -1024,6 +1031,7 @@ function renderLightSliderWidget(entity) {
     shadow_width: 4
     shadow_color: 0x1F2933
     shadow_opa: 6%
+    scrollable: false
     scrollbar_mode: "OFF"
     layout:
       type: FLEX
@@ -1037,6 +1045,7 @@ function renderLightSliderWidget(entity) {
           border_width: 0
           bg_opa: TRANSP
           pad_all: 0
+          scrollable: false
           scrollbar_mode: "OFF"
           layout:
             type: FLEX
@@ -1050,6 +1059,7 @@ function renderLightSliderWidget(entity) {
                 radius: 22
                 bg_color: 0xFEEDBD
                 border_width: 0
+                scrollable: false
                 scrollbar_mode: "OFF"
                 layout:
                   type: FLEX
@@ -1073,6 +1083,7 @@ function renderLightSliderWidget(entity) {
                 bg_opa: TRANSP
                 pad_all: 0
                 pad_left: 12
+                scrollable: false
                 scrollbar_mode: "OFF"
                 layout:
                   type: FLEX
@@ -1096,6 +1107,7 @@ function renderLightSliderWidget(entity) {
           radius: 12
           border_width: 0
           pad_all: 0
+          scrollable: false
           scrollbar_mode: "OFF"
           widgets:
             - obj:
@@ -1105,6 +1117,7 @@ function renderLightSliderWidget(entity) {
                 bg_color: 0xFDBB13
                 radius: 12
                 border_width: 0
+                scrollable: false
                 scrollbar_mode: "OFF"
             - obj:
                 id: ${getWidgetId(entity, 0)}_pill
@@ -1115,6 +1128,7 @@ function renderLightSliderWidget(entity) {
                 align: LEFT_MID
                 x: 0
                 border_width: 0
+                scrollable: false
                 scrollbar_mode: "OFF"
             - slider:
                 id: ${getWidgetId(entity, 0)}
@@ -1124,6 +1138,7 @@ function renderLightSliderWidget(entity) {
                 max_value: 100
                 radius: 12
                 bg_opa: TRANSP
+                scrollable: false
                 scrollbar_mode: "OFF"
                 indicator:
                   bg_opa: TRANSP
@@ -1189,6 +1204,7 @@ function renderLightSliderWidget(entity) {
           radius: 12
           border_width: 0
           pad_all: 0
+          scrollable: false
           scrollbar_mode: "OFF"
           widgets:
             - obj:
@@ -1200,6 +1216,7 @@ function renderLightSliderWidget(entity) {
                 align: LEFT_MID
                 x: 0
                 border_width: 0
+                scrollable: false
                 scrollbar_mode: "OFF"
             - slider:
                 id: ${getWidgetId(entity, 0)}_ct
@@ -1209,6 +1226,7 @@ function renderLightSliderWidget(entity) {
                 max_value: 100
                 radius: 12
                 bg_opa: TRANSP
+                scrollable: false
                 scrollbar_mode: "OFF"
                 indicator:
                   bg_opa: TRANSP
@@ -1276,6 +1294,7 @@ function renderLightTileWidget(entity) {
     checked:
       bg_color: 0xEF920C
     shadow_width: 0
+    scrollable: false
     scrollbar_mode: "OFF"
     state:
       checked: !lambda return id(${haId}).state == "on";
@@ -1313,6 +1332,7 @@ function renderLightTileWidget(entity) {
           bg_color: 0xFFFFFF
           bg_opa: ${LIGHT_TILE_ICON_BUBBLE_OPACITY}%
           shadow_width: 0
+          scrollable: false
           scrollbar_mode: "OFF"
           widgets:
             - image:
