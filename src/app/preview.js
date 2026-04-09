@@ -14,6 +14,7 @@ import {
   LIGHT_STYLE_TILE,
   LIGHT_STYLE_SLIDER,
   LIGHT_TILE_ICON_BUBBLE_OPACITY,
+  LIGHT_DEFAULT_PREVIEW_HUE,
   MULTI_SWITCH_STYLE_TILE,
   MULTI_SWITCH_STYLE_LIST,
   SWITCH_BUTTON_HEIGHT,
@@ -216,6 +217,7 @@ export function renderInspector(entity, elements) {
   fieldLightIcon.value = entity.props.icon ?? "";
   fieldLightTileIconPosition.value = entity.props.tile_icon_position ?? LIGHT_TILE_ICON_POSITION_DEFAULT;
   fieldColorTemp.checked = entity.props.color_temp ?? false;
+  elements.fieldHue360.checked = entity.props.hue_360 ?? false;
   multiSwitchEnabledInputs?.forEach((input, index) => {
     input.checked = isMultiSwitchChannelEnabled(entity.props, index);
   });
@@ -237,8 +239,12 @@ export function renderInspector(entity, elements) {
   });
   if (entity.type === "light") {
     elements.fieldLightPreviewCtRow?.classList.toggle("hidden", !entity.props.color_temp);
+    elements.fieldLightPreviewHueRow?.classList.toggle("hidden", !entity.props.hue_360);
     if (elements.fieldLightPreviewCt) {
       elements.fieldLightPreviewCt.value = entity.props.preview_color_temp !== undefined ? entity.props.preview_color_temp : 50;
+    }
+    if (elements.fieldLightPreviewHue) {
+      elements.fieldLightPreviewHue.value = entity.props.preview_hue !== undefined ? entity.props.preview_hue : LIGHT_DEFAULT_PREVIEW_HUE;
     }
   }
   updateThermoIconInspectorPreview(elements);
@@ -280,6 +286,11 @@ export function calculateLightSliderColor(factor) {
   const b = Math.round(cool.b + (warm.b - cool.b) * factor);
   
   return `rgb(${r}, ${g}, ${b})`;
+}
+
+export function calculateHueSliderColor(hue) {
+  const normalizedHue = ((Number(hue) || 0) % 360 + 360) % 360;
+  return `hsl(${normalizedHue}deg 100% 50%)`;
 }
 
 function renderSingleSwitchPreview(entity) {
@@ -466,7 +477,7 @@ function renderLightPreview(entity) {
 
     group.append(iconBubble, titleLabel, stateLabel);
   } else if (entity.props.style === LIGHT_STYLE_SLIDER) {
-    group.className = `light-widget-group slider ${entity.props.color_temp ? "has-ct" : ""} off`;
+    group.className = `light-widget-group slider ${entity.props.color_temp ? "has-ct" : ""} ${entity.props.hue_360 ? "has-hue" : ""} off`;
 
     const topRow = document.createElement("div");
     topRow.className = "light-slider-top-row";
@@ -509,7 +520,8 @@ function renderLightPreview(entity) {
     sliderFill.style.width = "30%";
 
     const ctFactor = entity.props.preview_color_temp !== undefined ? entity.props.preview_color_temp / 100 : 0.5;
-    const sliderFillColor = calculateLightSliderColor(ctFactor);
+    const previewHue = entity.props.preview_hue !== undefined ? entity.props.preview_hue : LIGHT_DEFAULT_PREVIEW_HUE;
+    const sliderFillColor = entity.props.hue_360 ? calculateHueSliderColor(previewHue) : calculateLightSliderColor(ctFactor);
     sliderFill.style.backgroundColor = sliderFillColor;
 
     const sliderKnob = document.createElement("div");
@@ -531,6 +543,20 @@ function renderLightPreview(entity) {
       ctFill.append(ctKnob);
       ctTrack.append(ctFill);
       group.append(ctTrack);
+    }
+    if (entity.props.hue_360) {
+      const hueTrack = document.createElement("div");
+      hueTrack.className = "light-slider-track hue-track";
+      const hueFill = document.createElement("div");
+      hueFill.className = "light-slider-fill hue-fill";
+      hueFill.style.width = `${(previewHue / 360) * 100}%`;
+      hueFill.style.backgroundColor = "transparent";
+      const hueKnob = document.createElement("div");
+      hueKnob.className = "light-slider-knob";
+      hueKnob.style.backgroundColor = calculateHueSliderColor(previewHue);
+      hueFill.append(hueKnob);
+      hueTrack.append(hueFill);
+      group.append(hueTrack);
     }
   } else {
     const icon = document.createElement("img");

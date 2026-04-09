@@ -168,6 +168,62 @@ function getLightMaxColorTempSensorId(entity) {
   return `ha_max_color_temp_${getEntitySlug(entity)}`;
 }
 
+function getLightRgbSensorId(entity) {
+  return `ha_rgb_${getEntitySlug(entity)}`;
+}
+
+function getLightHueWrapperId(entity) {
+  return `${getWidgetId(entity, 0)}_hue_wrapper`;
+}
+
+function getLightHuePillId(entity) {
+  return `${getWidgetId(entity, 0)}_hue_pill`;
+}
+
+function getLightHueSliderId(entity) {
+  return `${getWidgetId(entity, 0)}_hue`;
+}
+
+function renderHueRgbStatements(pctExpr) {
+  return `float pct = ${pctExpr};
+if (pct < 0.0f) pct = 0.0f;
+if (pct > 1.0f) pct = 1.0f;
+struct RGB { float r; float g; float b; };
+static const RGB stops[] = {
+  {255.0f,   0.0f,   0.0f},
+  {255.0f, 255.0f,   0.0f},
+  {  0.0f, 255.0f,   0.0f},
+  {  0.0f, 255.0f, 255.0f},
+  {  0.0f,   0.0f, 255.0f},
+  {255.0f,   0.0f, 255.0f}
+};
+float pos = pct * 5.0f;
+if (pos >= 5.0f) pos = 4.9999f;
+int index = (int) pos;
+float fract = pos - index;
+float r = stops[index].r + (stops[index + 1].r - stops[index].r) * fract;
+float g = stops[index].g + (stops[index + 1].g - stops[index].g) * fract;
+float b = stops[index].b + (stops[index + 1].b - stops[index].b) * fract;`;
+}
+
+function indentCodeBlock(text, spaces) {
+  const prefix = " ".repeat(spaces);
+  return String(text).split("\n").map((line) => `${prefix}${line}`).join("\n");
+}
+
+function renderLightAccentColorLambda(entity) {
+  if (entity.props.hue_360) {
+    return `${renderHueRgbStatements(`(float) lv_slider_get_value(id(${getLightHueSliderId(entity)})) / 100.0f`)}
+return lv_color_make((uint8_t) r, (uint8_t) g, (uint8_t) b);`;
+  }
+
+  return `float val = ${entity.props.color_temp ? `(float)lv_slider_get_value(id(${getWidgetId(entity, 0)}_ct)) / 100.0f` : `0.5f`};
+int r = (int)(213 + (255 - 213) * val);
+int g = (int)(213 + (137 - 213) * val);
+int b = (int)(225 + (14 - 225) * val);
+return lv_color_make(r, g, b);`;
+}
+
 function getMetricCaption(index) {
   return index === 0 ? "Temp" : "Humi";
 }
@@ -623,7 +679,6 @@ function renderSensorBlock(entities) {
           int b = (int)(225 + (14 - 225) * val);
           return lv_color_make(r, g, b);`);
         }
-        
         return blocks;
       })
       .join("\n");
@@ -636,7 +691,9 @@ function renderTextSensorBlock(entities) {
         if (entity.type === "thermo_hygrometer") {
           return entity.entityids.map((_, index) => renderTextSensorComponent(entity, index));
         }
-        return [renderLightStateTextSensorComponent(entity)];
+        return entity.props.hue_360
+          ? [renderLightStateTextSensorComponent(entity), renderLightRgbTextSensorComponent(entity)]
+          : [renderLightStateTextSensorComponent(entity)];
       })
       .join("\n");
 }
@@ -712,6 +769,90 @@ function renderTextSensorComponent(entity, index) {
           return value.c_str();`;
 }
 
+function renderLightRgbTextSensorComponent(entity) {
+  return `- platform: homeassistant
+  id: ${getLightRgbSensorId(entity)}
+  entity_id: ${quoteYaml(entity.entityids[0])}
+  attribute: rgb_color
+  on_value:
+    - lambda: |-
+        float values[3] = {255.0f, 0.0f, 0.0f};
+        int found = 0;
+        std::string token;
+        auto flush_token = [&](void) {
+          if (found >= 3 || token.empty()) return;
+          values[found++] = atof(token.c_str());
+          token.clear();
+        };
+
+        for (char c : x) {
+          if ((c >= '0' && c <= '9') || c == '.' || c == '-') {
+            token.push_back(c);
+          } else {
+            flush_token();
+          }
+        }
+        flush_token();
+
+        if (found < 3) {
+          return;
+        }
+
+        int r = (int) values[0];
+        int g = (int) values[1];
+        int b = (int) values[2];
+
+        if (r < 0) r = 0;
+        if (r > 255) r = 255;
+        if (g < 0) g = 0;
+        if (g > 255) g = 255;
+        if (b < 0) b = 0;
+        if (b > 255) b = 255;
+
+        float rf = r / 255.0f;
+        float gf = g / 255.0f;
+        float bf = b / 255.0f;
+        float max_v = rf;
+        if (gf > max_v) max_v = gf;
+        if (bf > max_v) max_v = bf;
+        float min_v = rf;
+        if (gf < min_v) min_v = gf;
+        if (bf < min_v) min_v = bf;
+        float delta = max_v - min_v;
+        float hue = 0.0f;
+
+        if (delta > 0.0001f) {
+          if (max_v == rf) {
+            hue = 60.0f * fmodf(((gf - bf) / delta), 6.0f);
+          } else if (max_v == gf) {
+            hue = 60.0f * (((bf - rf) / delta) + 2.0f);
+          } else {
+            hue = 60.0f * (((rf - gf) / delta) + 4.0f);
+          }
+        }
+        if (hue < 0.0f) hue += 360.0f;
+
+        int slider_value = (int)((hue / 360.0f) * 100.0f + 0.5f);
+        if (slider_value < 0) slider_value = 0;
+        if (slider_value > 100) slider_value = 100;
+        lv_slider_set_value(id(${getLightHueSliderId(entity)}), slider_value, LV_ANIM_OFF);
+
+        auto wrapper = id(${getLightHueWrapperId(entity)});
+        int w = lv_obj_get_width(wrapper);
+        int fill_w = (int)((w * slider_value) / 100.0f);
+        if (fill_w < 0) fill_w = 0;
+        if (fill_w > w) fill_w = w;
+        int pill_x = fill_w - 10;
+        if (pill_x < 0) pill_x = 0;
+        lv_obj_set_x(id(${getLightHuePillId(entity)}), pill_x);
+
+        auto color = lv_color_make(r, g, b);
+        lv_obj_set_style_bg_color(id(${getWidgetId(entity, 0)}_bubble), color, 0);
+        lv_obj_set_style_bg_color(id(${getWidgetId(entity, 0)}_orange_fill), color, 0);
+        lv_obj_set_style_bg_color(id(${getWidgetId(entity, 0)}_wrapper), color, 0);
+        lv_obj_set_style_image_recolor(id(${getWidgetId(entity, 0)}_icon), color, 0);`;
+}
+
 function renderLightStateTextSensorComponent(entity) {
   if (entity.props.style === LIGHT_STYLE_SLIDER) {
     let offStateYaml = `          - lvgl.obj.update:
@@ -724,19 +865,11 @@ function renderLightStateTextSensorComponent(entity) {
     let onStateYaml = `          - lvgl.obj.update:
               id: ${getWidgetId(entity, 0)}_wrapper
               bg_color: !lambda |-
-                float val = ${entity.props.color_temp ? `(float)lv_slider_get_value(id(${getWidgetId(entity, 0)}_ct)) / 100.0f` : `0.5f`};
-                int r = (int)(213 + (255 - 213) * val);
-                int g = (int)(213 + (137 - 213) * val);
-                int b = (int)(225 + (14 - 225) * val);
-                return lv_color_make(r, g, b);
+${indentCodeBlock(renderLightAccentColorLambda(entity), 16)}
           - lvgl.obj.update:
               id: ${getWidgetId(entity, 0)}_orange_fill
               bg_color: !lambda |-
-                float val = ${entity.props.color_temp ? `(float)lv_slider_get_value(id(${getWidgetId(entity, 0)}_ct)) / 100.0f` : `0.5f`};
-                int r = (int)(213 + (255 - 213) * val);
-                int g = (int)(213 + (137 - 213) * val);
-                int b = (int)(225 + (14 - 225) * val);
-                return lv_color_make(r, g, b);`;
+${indentCodeBlock(renderLightAccentColorLambda(entity), 16)}`;
 
     if (entity.props.color_temp) {
       offStateYaml += `
@@ -796,20 +929,12 @@ ${offStateYaml}
           - lvgl.obj.update:
               id: ${getWidgetId(entity, 0)}_icon
               image_recolor: !lambda |-
-                float val = ${entity.props.color_temp ? `(float)lv_slider_get_value(id(${getWidgetId(entity, 0)}_ct)) / 100.0f` : `0.5f`};
-                int r = (int)(213 + (255 - 213) * val);
-                int g = (int)(213 + (137 - 213) * val);
-                int b = (int)(225 + (14 - 225) * val);
-                return lv_color_make(r, g, b);
+${indentCodeBlock(renderLightAccentColorLambda(entity), 16)}
               image_recolor_opa: COVER
           - lvgl.obj.update:
               id: ${getWidgetId(entity, 0)}_bubble
               bg_color: !lambda |-
-                float val = ${entity.props.color_temp ? `(float)lv_slider_get_value(id(${getWidgetId(entity, 0)}_ct)) / 100.0f` : `0.5f`};
-                int r = (int)(213 + (255 - 213) * val);
-                int g = (int)(213 + (137 - 213) * val);
-                int b = (int)(225 + (14 - 225) * val);
-                return lv_color_make(r, g, b);
+${indentCodeBlock(renderLightAccentColorLambda(entity), 16)}
               bg_opa: 30%
 ${onStateYaml}`;
   }
@@ -1308,7 +1433,7 @@ function renderLightSliderWidget(entity) {
                   flex_align_cross: CENTER
                 on_click:
                   - homeassistant.service:
-                      action: light.toggle
+                      service: light.toggle
                       data:
                         entity_id: ${quoteYaml(entity.entityids[0])}
                 widgets:
@@ -1520,6 +1645,148 @@ function renderLightSliderWidget(entity) {
                             if (pct < 0.0f) pct = 0.0f;
                             if (pct > 1.0f) pct = 1.0f;
                             return (int) (max_kelvin - ((max_kelvin - min_kelvin) * pct) + 0.5f);`;
+  }
+
+  if (entity.props.hue_360) {
+    yaml += `
+      - obj:
+          id: ${getLightHueWrapperId(entity)}
+          width: 100%
+          height: 38
+          flex_grow: 1
+          clip_corner: true
+          bg_color: 0x000000
+          radius: 12
+          border_width: 0
+          pad_all: 0
+          scrollable: false
+          scrollbar_mode: "OFF"
+          widgets:
+            - obj:
+                width: 100%
+                height: 100%
+                border_width: 0
+                bg_opa: TRANSP
+                pad_all: 0
+                scrollable: false
+                scrollbar_mode: "OFF"
+                layout:
+                  type: FLEX
+                  flex_flow: ROW
+                  pad_column: 0
+                widgets:
+                  - obj:
+                      width: 20%
+                      height: 100%
+                      radius: 0
+                      border_width: 0
+                      bg_color: 0xFF0000
+                      bg_grad_color: 0xFFFF00
+                      bg_grad_dir: HOR
+                  - obj:
+                      width: 20%
+                      height: 100%
+                      radius: 0
+                      border_width: 0
+                      bg_color: 0xFFFF00
+                      bg_grad_color: 0x00FF00
+                      bg_grad_dir: HOR
+                  - obj:
+                      width: 20%
+                      height: 100%
+                      radius: 0
+                      border_width: 0
+                      bg_color: 0x00FF00
+                      bg_grad_color: 0x00FFFF
+                      bg_grad_dir: HOR
+                  - obj:
+                      width: 20%
+                      height: 100%
+                      radius: 0
+                      border_width: 0
+                      bg_color: 0x00FFFF
+                      bg_grad_color: 0x0000FF
+                      bg_grad_dir: HOR
+                  - obj:
+                      width: 20%
+                      height: 100%
+                      radius: 0
+                      border_width: 0
+                      bg_color: 0x0000FF
+                      bg_grad_color: 0xFF00FF
+                      bg_grad_dir: HOR
+            - obj:
+                id: ${getLightHuePillId(entity)}
+                width: 4
+                height: 16
+                radius: 2
+                bg_color: 0xFFFFFF
+                align: LEFT_MID
+                x: 0
+                border_width: 0
+                scrollable: false
+                scrollbar_mode: "OFF"
+            - slider:
+                id: ${getLightHueSliderId(entity)}
+                width: 100%
+                height: 100%
+                min_value: 0
+                max_value: 100
+                radius: 12
+                bg_opa: TRANSP
+                scrollable: false
+                scrollbar_mode: "OFF"
+                indicator:
+                  bg_opa: TRANSP
+                knob:
+                  bg_opa: TRANSP
+                  border_width: 0
+                  shadow_width: 0
+                on_change:
+                  then:
+                    - lvgl.obj.update:
+                        id: ${getLightHuePillId(entity)}
+                        x: !lambda |-
+                          auto wrapper = id(${getLightHueWrapperId(entity)});
+                          int w = lv_obj_get_width(wrapper);
+                          int fill_w = (int)((w * x) / 100.0f);
+                          if(fill_w < 0) fill_w = 0;
+                          if(fill_w > w) fill_w = w;
+                          int pill_x = fill_w - 10;
+                          return pill_x < 0 ? 0 : pill_x;
+                    - lvgl.obj.update:
+                        id: ${getWidgetId(entity, 0)}_bubble
+                        bg_color: !lambda |-
+${indentCodeBlock(`${renderHueRgbStatements("x / 100.0f")}
+return lv_color_make((uint8_t) r, (uint8_t) g, (uint8_t) b);`, 26)}
+                    - lvgl.obj.update:
+                        id: ${getWidgetId(entity, 0)}_icon
+                        image_recolor: !lambda |-
+${indentCodeBlock(`${renderHueRgbStatements("x / 100.0f")}
+return lv_color_make((uint8_t) r, (uint8_t) g, (uint8_t) b);`, 26)}
+                        image_recolor_opa: COVER
+                    - lvgl.obj.update:
+                        id: ${getWidgetId(entity, 0)}_wrapper
+                        bg_color: !lambda |-
+${indentCodeBlock(`${renderHueRgbStatements("x / 100.0f")}
+return lv_color_make((uint8_t) r, (uint8_t) g, (uint8_t) b);`, 26)}
+                    - lvgl.obj.update:
+                        id: ${getWidgetId(entity, 0)}_orange_fill
+                        bg_color: !lambda |-
+${indentCodeBlock(`${renderHueRgbStatements("x / 100.0f")}
+return lv_color_make((uint8_t) r, (uint8_t) g, (uint8_t) b);`, 26)}
+                on_release:
+                  then:
+                    - homeassistant.action:
+                        action: light.turn_on
+                        data:
+                          entity_id: ${quoteYaml(entity.entityids[0])}
+                        data_template:
+                          rgb_color: !lambda |-
+                            static char rgb_buf[32];
+${indentCodeBlock(renderHueRgbStatements("x / 100.0f"), 28)}
+                            sprintf(rgb_buf, "[%d,%d,%d]", (int) (r + 0.5f), (int) (g + 0.5f), (int) (b + 0.5f));
+                            return rgb_buf;`;
   }
 
   return yaml;

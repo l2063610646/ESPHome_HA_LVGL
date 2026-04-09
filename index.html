@@ -315,11 +315,21 @@
                   <input id="field-color-temp" type="checkbox" style="cursor: pointer;" />
                   <span>Support Color Temperature Slider</span>
                 </label>
+                <label style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px; font-size: 13px; color: #596775; cursor: pointer;">
+                  <input id="field-hue-360" type="checkbox" style="cursor: pointer;" />
+                  <span>Support Hue 360 Slider</span>
+                </label>
               </div>
               <div id="field-light-preview-ct-row" class="hidden">
                 <label class="stack">
                   <span>Preview Color Temp (0-100)</span>
                   <input id="field-light-preview-ct" type="range" min="0" max="100" value="50" step="1" />
+                </label>
+              </div>
+              <div id="field-light-preview-hue-row" class="hidden">
+                <label class="stack">
+                  <span>Preview Hue (0-360)</span>
+                  <input id="field-light-preview-hue" type="range" min="0" max="360" value="180" step="1" />
                 </label>
               </div>
               <div class="icon-preview-grid hidden">

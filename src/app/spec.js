@@ -19,6 +19,7 @@ import {
   LIGHT_STYLE_ICON,
   LIGHT_STYLE_TILE,
   LIGHT_STYLE_SLIDER,
+  LIGHT_DEFAULT_PREVIEW_HUE,
   MULTI_SWITCH_STYLE_TILE,
   MULTI_SWITCH_STYLE_LIST,
   getMultiSwitchChannelTitle,
@@ -185,6 +186,9 @@ function appendEntityYaml(lines, entity, indent = "  ") {
     }
     if (entity.props.color_temp) {
       lines.push(`${propIndent}  color_temp: true`);
+    }
+    if (entity.props.hue_360) {
+      lines.push(`${propIndent}  hue_360: true`);
     }
   }
   if (entity.type === "multi_switch") {
@@ -474,9 +478,16 @@ export function normalizeEntity(entity, canvasWidth = BOARD_CONFIGS.nextion_35.w
         props.tile_icon_position || props.icon_position || props.icon_align || LIGHT_TILE_ICON_POSITION_DEFAULT
       ),
       color_temp: !!(props.color_temp ?? props.colorTemp ?? false),
+      hue_360: !!(props.hue_360 ?? props.hue360 ?? props.hue ?? false),
+      preview_color_temp: clampNumber(props.preview_color_temp ?? props.previewColorTemp ?? 50, 0, 100),
+      preview_hue: clampNumber(props.preview_hue ?? props.previewHue ?? LIGHT_DEFAULT_PREVIEW_HUE, 0, 360),
       active_bg_color: normalizeOptionalColor(props.active_bg_color || props.active_color || props.on_color),
     },
   };
+}
+
+function getLightSliderExtraRowCount(props = {}) {
+  return Number(!!props.color_temp) + Number(!!props.hue_360);
 }
 
 export function updateCanvasDimensions(state) {
@@ -595,7 +606,7 @@ export function defaultHeightForType(type, style = SWITCH_STYLE_TOGGLE, props = 
   }
   if (type === "light") {
     if (style === LIGHT_STYLE_TILE) return 120;
-    if (style === LIGHT_STYLE_SLIDER) return props.color_temp ? 152 : 112;
+    if (style === LIGHT_STYLE_SLIDER) return 112 + getLightSliderExtraRowCount(props) * 40;
     return DEFAULT_LIGHT_HEIGHT;
   }
   return style === SWITCH_STYLE_BUTTON ? SWITCH_BUTTON_STYLE_HEIGHT : DEFAULT_HEIGHT;
@@ -624,7 +635,7 @@ export function minHeightForType(type, style = SWITCH_STYLE_TOGGLE, props = {}) 
     return 104;
   }
   if (type === "light") {
-    if (style === LIGHT_STYLE_SLIDER) return props.color_temp ? 110 : 80;
+    if (style === LIGHT_STYLE_SLIDER) return 80 + getLightSliderExtraRowCount(props) * 30;
     return 48;
   }
   return style === SWITCH_STYLE_BUTTON ? SWITCH_BUTTON_STYLE_HEIGHT : 56;

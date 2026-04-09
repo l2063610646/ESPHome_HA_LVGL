@@ -102,6 +102,7 @@ const elements = {
   fieldLightIcon: document.getElementById("field-light-icon"),
   fieldLightTileIconPosition: document.getElementById("field-light-tile-icon-position"),
   fieldColorTemp: document.getElementById("field-color-temp"),
+  fieldHue360: document.getElementById("field-hue-360"),
   tempIconPreviewImg: document.getElementById("temp-icon-preview-img"),
   humIconPreviewImg: document.getElementById("hum-icon-preview-img"),
   tempIconPreviewFallback: document.getElementById("temp-icon-preview-fallback"),
@@ -117,6 +118,8 @@ const elements = {
   fieldActiveBgColorCopy: document.getElementById("field-active-bg-color-copy"),
   fieldLightPreviewCt: document.getElementById("field-light-preview-ct"),
   fieldLightPreviewCtRow: document.getElementById("field-light-preview-ct-row"),
+  fieldLightPreviewHue: document.getElementById("field-light-preview-hue"),
+  fieldLightPreviewHueRow: document.getElementById("field-light-preview-hue-row"),
   screenBgColorHex: document.getElementById("screen-bg-color-hex"),
   screenBgColorCopy: document.getElementById("screen-bg-color-copy"),
 };
@@ -293,8 +296,10 @@ elements.deleteBtn.addEventListener("click", () => {
   elements.fieldWidth,
   elements.fieldHeight,
   elements.fieldColorTemp,
+  elements.fieldHue360,
   elements.fieldActiveBgColor,
   elements.fieldLightPreviewCt,
+  elements.fieldLightPreviewHue,
   ...elements.multiSwitchEnabledInputs,
   ...elements.multiSwitchEntityInputs,
   ...elements.multiSwitchTitleInputs,
@@ -542,7 +547,9 @@ function handleInspectorChange() {
     entity.props.icon = normalizeIconSource(elements.fieldLightIcon.value);
     entity.props.tile_icon_position = elements.fieldLightTileIconPosition.value.trim() || entity.props.tile_icon_position;
     entity.props.color_temp = elements.fieldColorTemp.checked;
+    entity.props.hue_360 = elements.fieldHue360.checked;
     entity.props.preview_color_temp = parseInt(elements.fieldLightPreviewCt.value, 10);
+    entity.props.preview_hue = parseInt(elements.fieldLightPreviewHue.value, 10);
     entity.props.height = Math.max(entity.props.height, minHeightForType(entity.type, entity.props.style, entity.props));
   }
 
@@ -609,7 +616,9 @@ function handleInspectorCommit() {
   }
   if (entity.type === "light") {
     entity.props.color_temp = elements.fieldColorTemp.checked;
+    entity.props.hue_360 = elements.fieldHue360.checked;
     entity.props.preview_color_temp = parseInt(elements.fieldLightPreviewCt.value, 10);
+    entity.props.preview_hue = parseInt(elements.fieldLightPreviewHue.value, 10);
   }
   if (elements.fieldActiveBgColor) {
     entity.props.active_bg_color = htmlColorToYaml(elements.fieldActiveBgColor.value);

@@ -22,6 +22,7 @@ export const THERMO_VALUE_BOX_HEIGHT = 80;
 export const LIGHT_STYLE_ICON = "icon";
 export const LIGHT_STYLE_TILE = "tile";
 export const LIGHT_STYLE_SLIDER = "slider";
+export const LIGHT_DEFAULT_PREVIEW_HUE = 180;
 export const LIGHT_TILE_ICON_BUBBLE_OPACITY = 40;
 export const LIGHT_TILE_ICON_POSITION_TOP_LEFT = "top-left";
 export const LIGHT_TILE_ICON_POSITION_TOP_RIGHT = "top-right";
@@ -166,6 +167,8 @@ export const ENTITY_CAPABILITIES = {
           icon: LIGHT_ICON_PATHS.on,
           tile_icon_position: LIGHT_TILE_ICON_POSITION_DEFAULT,
           color_temp: false,
+          hue_360: false,
+          preview_hue: LIGHT_DEFAULT_PREVIEW_HUE,
         },
       };
     },

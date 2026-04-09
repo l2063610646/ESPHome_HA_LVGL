@@ -63,8 +63,13 @@ Supported styles:
 - `multi_switch.props.style: tile`
 - `light.props.style: icon`
 - `light.props.style: tile`
+- `light.props.style: slider`
 - `light.props.tile_icon_position`
   Optional for `light.props.style: tile`. Supported values: `top-left`, `top-right`, `bottom-left`, `bottom-right`.
+- `light.props.color_temp`
+  Optional for `light.props.style: slider`. Adds a color temperature slider.
+- `light.props.hue_360`
+  Optional for `light.props.style: slider`. Adds a 360-degree hue slider and generates `rgb_color` output.
 - `thermo_hygrometer.props.style: compact`
 
 Example:
