@@ -117,6 +117,10 @@ function getLightImageId(entity) {
   return `light_${getEntitySlug(entity)}_icon`;
 }
 
+function getCoverActionImageId(entity, action) {
+  return `cover_${action}_${getEntitySlug(entity)}_icon`;
+}
+
 function getLightStateLabelId(entity) {
   return `light_state_${getEntitySlug(entity)}`;
 }
@@ -759,7 +763,7 @@ function renderTextSensorBlock(entities) {
 
 function renderImageBlock(entities) {
   return entities
-      .filter((entity) => entity.type === "thermo_hygrometer" || entity.type === "light")
+      .filter((entity) => entity.type === "thermo_hygrometer" || entity.type === "light" || entity.type === "cover")
       .flatMap((entity) => {
         if (entity.type === "thermo_hygrometer") {
           return [
@@ -773,6 +777,23 @@ function renderImageBlock(entities) {
   type: rgb565
   transparency: alpha_channel
   resize: 32x32`,
+          ];
+        }
+
+        if (entity.type === "cover") {
+          return [
+            `- file: "mdi:arrow-down-circle"
+  id: ${getCoverActionImageId(entity, "close")}
+  type: BINARY
+  transparency: chroma_key`,
+            `- file: "mdi:pause"
+  id: ${getCoverActionImageId(entity, "stop")}
+  type: BINARY
+  transparency: chroma_key`,
+            `- file: "mdi:arrow-up-circle"
+  id: ${getCoverActionImageId(entity, "open")}
+  type: BINARY
+  transparency: chroma_key`,
           ];
         }
 
@@ -1087,11 +1108,9 @@ function renderCoverWidget(entity) {
           shadow_width: 0
           scrollable: false
           widgets:
-            - label:
+            - image:
                 align: CENTER
-                text_font: ${UI_FONT_BODY}
-                text: "CLOSE"
-                text_color: 0x24323A
+                src: ${getCoverActionImageId(entity, "close")}
           on_click:
             - homeassistant.action:
                 action: cover.close_cover
@@ -1110,11 +1129,9 @@ function renderCoverWidget(entity) {
           shadow_width: 0
           scrollable: false
           widgets:
-            - label:
+            - image:
                 align: CENTER
-                text_font: ${UI_FONT_BODY}
-                text: "STOP"
-                text_color: 0x24323A
+                src: ${getCoverActionImageId(entity, "stop")}
           on_click:
             - homeassistant.action:
                 action: cover.stop_cover
@@ -1133,11 +1150,9 @@ function renderCoverWidget(entity) {
           shadow_width: 0
           scrollable: false
           widgets:
-            - label:
+            - image:
                 align: CENTER
-                text_font: ${UI_FONT_BODY}
-                text: "OPEN"
-                text_color: 0x24323A
+                src: ${getCoverActionImageId(entity, "open")}
           on_click:
             - homeassistant.action:
                 action: cover.open_cover

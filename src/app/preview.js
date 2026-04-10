@@ -468,13 +468,19 @@ function renderCoverPreview(entity) {
   controls.className = "cover-controls";
 
   [
-    { label: "CLOSE", className: "cover-control close" },
-    { label: "STOP", className: "cover-control stop" },
-    { label: "OPEN", className: "cover-control open" },
+    { src: "mdi:arrow-down-circle", alt: "Close", className: "cover-control close" },
+    { src: "mdi:pause", alt: "Stop", className: "cover-control stop" },
+    { src: "mdi:arrow-up-circle", alt: "Open", className: "cover-control open" },
   ].forEach((item) => {
     const button = document.createElement("span");
     button.className = item.className;
-    button.textContent = item.label;
+
+    const icon = document.createElement("img");
+    icon.className = "cover-control-icon";
+    icon.src = resolvePreviewImageSource(item.src);
+    icon.alt = item.alt;
+    button.append(icon);
+
     controls.append(button);
   });
 
