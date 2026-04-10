@@ -19,6 +19,9 @@ export const THERMO_HYGROMETER_STYLE_COMPACT = "compact";
 export const DEFAULT_THERMO_WIDTH = 220;
 export const DEFAULT_THERMO_HEIGHT = 112;
 export const THERMO_VALUE_BOX_HEIGHT = 80;
+export const COVER_STYLE_COMPACT = "compact";
+export const DEFAULT_COVER_WIDTH = 195;
+export const DEFAULT_COVER_HEIGHT = 132;
 export const LIGHT_STYLE_ICON = "icon";
 export const LIGHT_STYLE_TILE = "tile";
 export const LIGHT_STYLE_SLIDER = "slider";
@@ -139,6 +142,29 @@ export const ENTITY_CAPABILITIES = {
           style: THERMO_HYGROMETER_STYLE_COMPACT,
           temp_icon: THERMO_ICON_PATHS.temp,
           hum_icon: THERMO_ICON_PATHS.hum,
+        },
+      };
+    },
+  },
+  cover: {
+    label: "curtain",
+    entityFields: [
+      { label: "Entity ID", defaultValue: (index) => `cover.new_curtain_${index}` },
+    ],
+    styleOptions: [
+      { value: COVER_STYLE_COMPACT, label: "compact" },
+    ],
+    createEntity(index) {
+      return {
+        entityid: `cover.new_curtain_${index}`,
+        type: "cover",
+        props: {
+          x: 24,
+          y: 24,
+          width: DEFAULT_COVER_WIDTH,
+          height: DEFAULT_COVER_HEIGHT,
+          title: `Curtain ${index}`,
+          style: COVER_STYLE_COMPACT,
         },
       };
     },

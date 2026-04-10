@@ -1,5 +1,8 @@
 import {
   BOARD_CONFIGS,
+  COVER_STYLE_COMPACT,
+  DEFAULT_COVER_HEIGHT,
+  DEFAULT_COVER_WIDTH,
   DEFAULT_HEIGHT,
   DEFAULT_MULTI_SWITCH_HEIGHT,
   DEFAULT_MULTI_SWITCH_WIDTH,
@@ -153,7 +156,7 @@ export function generateSpecYaml(state) {
 
 function appendEntityYaml(lines, entity, indent = "  ") {
   const propIndent = `${indent}  `;
-  if (entity.type === "switch" || entity.type === "light") {
+  if (entity.type === "switch" || entity.type === "light" || entity.type === "cover") {
     lines.push(`${indent}- entityid: ${quoteYaml(entity.entityids[0])}`);
   } else {
     lines.push(`${indent}- entityids:`);
@@ -540,6 +543,9 @@ export function normalizeType(value) {
   if (value === "multi_switch") {
     return "multi_switch";
   }
+  if (value === "cover") {
+    return "cover";
+  }
   if (value === "light") {
     return "light";
   }
@@ -552,6 +558,9 @@ export function normalizeStyle(type, value) {
   }
   if (type === "switch") {
     return value === SWITCH_STYLE_BUTTON ? SWITCH_STYLE_BUTTON : SWITCH_STYLE_TOGGLE;
+  }
+  if (type === "cover") {
+    return COVER_STYLE_COMPACT;
   }
   if (type === "light") {
     if (value === LIGHT_STYLE_TILE) return LIGHT_STYLE_TILE;
@@ -567,6 +576,9 @@ export function defaultTitleForType(type, entityids) {
   }
   if (type === "multi_switch") {
     return "Switch Group";
+  }
+  if (type === "cover") {
+    return deriveTitle(entityids[0]);
   }
   if (type === "light") {
     return deriveTitle(entityids[0]);
@@ -584,6 +596,9 @@ export function defaultWidthForType(type, style) {
   }
   if (type === "multi_switch") {
     return DEFAULT_MULTI_SWITCH_WIDTH;
+  }
+  if (type === "cover") {
+    return DEFAULT_COVER_WIDTH;
   }
   if (type === "light") {
     if (style === LIGHT_STYLE_TILE) return 120;
@@ -604,6 +619,9 @@ export function defaultHeightForType(type, style = SWITCH_STYLE_TOGGLE, props = 
     }
     return DEFAULT_MULTI_SWITCH_HEIGHT;
   }
+  if (type === "cover") {
+    return DEFAULT_COVER_HEIGHT;
+  }
   if (type === "light") {
     if (style === LIGHT_STYLE_TILE) return 120;
     if (style === LIGHT_STYLE_SLIDER) return 112 + getLightSliderExtraRowCount(props) * 40;
@@ -617,6 +635,9 @@ export function minWidthForType(type, style) {
     return 180;
   }
   if (type === "multi_switch") {
+    return 180;
+  }
+  if (type === "cover") {
     return 180;
   }
   if (type === "light") {
@@ -633,6 +654,9 @@ export function minHeightForType(type, style = SWITCH_STYLE_TOGGLE, props = {}) 
   }
   if (type === "multi_switch") {
     return 104;
+  }
+  if (type === "cover") {
+    return 120;
   }
   if (type === "light") {
     if (style === LIGHT_STYLE_SLIDER) return 80 + getLightSliderExtraRowCount(props) * 30;
@@ -713,7 +737,7 @@ export function usesTopAlignedTitle(entity) {
 }
 
 export function shouldRenderWidgetTitle(entity) {
-  return entity.type !== "thermo_hygrometer" && entity.type !== "light";
+  return entity.type !== "thermo_hygrometer" && entity.type !== "light" && entity.type !== "cover";
 }
 
 export function deriveTitle(entityId) {

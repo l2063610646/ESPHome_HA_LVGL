@@ -95,6 +95,8 @@ export function renderCanvas(state, elements, callbacks) {
       widget.append(entity.props.style === MULTI_SWITCH_STYLE_LIST ? renderMultiSwitchListPreview(entity) : renderMultiSwitchPreview(entity));
     } else if (entity.type === "thermo_hygrometer") {
       widget.append(renderThermoHygrometerPreview(entity));
+    } else if (entity.type === "cover") {
+      widget.append(renderCoverPreview(entity));
     } else {
       widget.append(renderLightPreview(entity));
     }
@@ -438,6 +440,60 @@ function renderThermoHygrometerPreview(entity) {
     valueBox.append(icon, value);
     group.append(valueBox);
   });
+
+  return group;
+}
+
+function renderCoverPreview(entity) {
+  const group = document.createElement("div");
+  group.className = "cover-widget-group";
+
+  const title = document.createElement("span");
+  title.className = "cover-title";
+  title.textContent = entity.props.title;
+
+  const current = document.createElement("span");
+  current.className = "cover-current";
+  current.textContent = "current: 30%";
+
+  const minLabel = document.createElement("span");
+  minLabel.className = "cover-range-label cover-range-min";
+  minLabel.textContent = "0%";
+
+  const maxLabel = document.createElement("span");
+  maxLabel.className = "cover-range-label cover-range-max";
+  maxLabel.textContent = "100%";
+
+  const controls = document.createElement("div");
+  controls.className = "cover-controls";
+
+  [
+    { label: "CLOSE", className: "cover-control close" },
+    { label: "STOP", className: "cover-control stop" },
+    { label: "OPEN", className: "cover-control open" },
+  ].forEach((item) => {
+    const button = document.createElement("span");
+    button.className = item.className;
+    button.textContent = item.label;
+    controls.append(button);
+  });
+
+  const slider = document.createElement("div");
+  slider.className = "cover-slider";
+
+  const fill = document.createElement("div");
+  fill.className = "cover-slider-fill";
+  fill.style.width = "30%";
+
+  const thumb = document.createElement("div");
+  thumb.className = "cover-slider-thumb";
+
+  fill.append(thumb);
+  slider.append(fill);
+
+  title.style.width = `${Math.max(entity.props.width - 24, 60)}px`;
+  current.style.width = `${Math.max(entity.props.width - 24, 60)}px`;
+  group.append(title, current, minLabel, maxLabel, controls, slider);
 
   return group;
 }

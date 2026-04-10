@@ -39,7 +39,7 @@ export function renderCombinedYaml(state) {
   ];
 
   const body = [
-    renderBaseConfigYaml(state).trimEnd(),
+    renderBaseConfigYaml(state, entities).trimEnd(),
     `  bg_color: ${state.screenBgColor}`,
     "  widgets:",
     indentLines(renderScreenWidgetBlock(screens, normalizeSwipeDirection(state.swipeDirection)) || "[]", 4),
@@ -119,6 +119,18 @@ function getLightImageId(entity) {
 
 function getLightStateLabelId(entity) {
   return `light_state_${getEntitySlug(entity)}`;
+}
+
+function getCoverPositionSensorId(entity) {
+  return `cover_position_${getEntitySlug(entity)}`;
+}
+
+function getCoverStateTextSensorId(entity) {
+  return `cover_state_${getEntitySlug(entity)}`;
+}
+
+function getCoverSyncingFlagId(entity) {
+  return `cover_syncing_${getEntitySlug(entity)}`;
 }
 
 function getScreenTileId(screen, index) {
@@ -258,7 +270,7 @@ function getBoardTransform(model, rotation) {
   return mappings[model]?.[rotation] || mappings[model]?.[0];
 }
 
-function renderBaseConfigYaml(state) {
+function renderBaseConfigYaml(state, entities = []) {
   const templates = {
     nextion_35: renderNextion35Base,
     nextion_28: renderNextion28Base,
@@ -272,10 +284,22 @@ function renderBaseConfigYaml(state) {
     friendlyName: getEffectiveFriendlyName(state.deviceName, state.friendlyName),
     ssid: state.wifiSsid,
     password: state.wifiPassword,
-  });
+  }, entities);
 }
 
-function renderNextion35Base(rotation, wifi) {
+function renderAdditionalGlobalsBlock(entities) {
+  const coverGlobals = entities
+      .filter((entity) => entity.type === "cover")
+      .map((entity) => `  - id: ${getCoverSyncingFlagId(entity)}
+    type: bool
+    restore_value: no
+    initial_value: "false"`)
+      .join("\n");
+
+  return coverGlobals ? `\n${coverGlobals}` : "";
+}
+
+function renderNextion35Base(rotation, wifi, entities = []) {
   const t = getBoardTransform("st7796", rotation);
   return `substitutions:
   device_name: ${quoteYaml(wifi.deviceName)}
@@ -355,7 +379,7 @@ globals:
   - id: backlight_percent
     type: int
     restore_value: no
-    initial_value: "50"
+    initial_value: "50"${renderAdditionalGlobalsBlock(entities)}
 
 display:
   - platform: mipi_spi
@@ -418,7 +442,7 @@ lvgl:
       long_press_repeat_time: 60ms`;
 }
 
-function renderNextion28Base(rotation, wifi) {
+function renderNextion28Base(rotation, wifi, entities = []) {
   const t = getBoardTransform("st7789v", rotation);
   return `substitutions:
   device_name: ${quoteYaml(wifi.deviceName)}
@@ -501,7 +525,7 @@ globals:
   - id: backlight_percent
     type: int
     restore_value: no
-    initial_value: "50"
+    initial_value: "50"${renderAdditionalGlobalsBlock(entities)}
 
 display:
   - platform: mipi_spi
@@ -559,8 +583,40 @@ function renderSwitchBlock(entities) {
 
 function renderSensorBlock(entities) {
   return entities
-      .filter((entity) => entity.type === "light" && entity.props.style === LIGHT_STYLE_SLIDER)
+      .filter((entity) => (entity.type === "light" && entity.props.style === LIGHT_STYLE_SLIDER) || entity.type === "cover")
       .flatMap((entity) => {
+        if (entity.type === "cover") {
+          return [`- platform: homeassistant
+  id: ${getCoverPositionSensorId(entity)}
+  entity_id: ${quoteYaml(entity.entityids[0])}
+  attribute: current_position
+  on_value:
+    - if:
+        condition:
+          lambda: |-
+            auto state = id(${getCoverStateTextSensorId(entity)}).state;
+            return state != "opening" && state != "closing";
+        then:
+          - globals.set:
+              id: ${getCoverSyncingFlagId(entity)}
+              value: "true"
+          - lvgl.slider.update:
+              id: ${getWidgetId(entity, 0)}
+              value: !lambda |-
+                return std::isnan(x) ? 0 : (int) x;
+          - globals.set:
+              id: ${getCoverSyncingFlagId(entity)}
+              value: "false"
+    - lvgl.label.update:
+        id: ${getValueLabelId(entity, 0)}
+        text: !lambda |-
+          static char buf[20];
+          int value = std::isnan(x) ? 0 : (int) x;
+          if (value < 0) value = 0;
+          if (value > 100) value = 100;
+          sprintf(buf, "current: %d%%", value);
+          return buf;`];
+        }
         const blocks = [
         `- platform: homeassistant
   id: ha_brightness_${getEntitySlug(entity)}
@@ -686,10 +742,13 @@ function renderSensorBlock(entities) {
 
 function renderTextSensorBlock(entities) {
   return entities
-      .filter((entity) => entity.type === "thermo_hygrometer" || entity.type === "light")
+      .filter((entity) => entity.type === "thermo_hygrometer" || entity.type === "light" || entity.type === "cover")
       .flatMap((entity) => {
         if (entity.type === "thermo_hygrometer") {
           return entity.entityids.map((_, index) => renderTextSensorComponent(entity, index));
+        }
+        if (entity.type === "cover") {
+          return [renderCoverStateTextSensorComponent(entity)];
         }
         return entity.props.hue_360
           ? [renderLightStateTextSensorComponent(entity), renderLightRgbTextSensorComponent(entity)]
@@ -767,6 +826,12 @@ function renderTextSensorComponent(entity, index) {
           static std::string value;
           value = "${getMetricCaption(index)}: " + x + "${getMetricSuffix(index)}";
           return value.c_str();`;
+}
+
+function renderCoverStateTextSensorComponent(entity) {
+  return `- platform: homeassistant
+  id: ${getCoverStateTextSensorId(entity)}
+  entity_id: ${quoteYaml(entity.entityids[0])}`;
 }
 
 function renderLightRgbTextSensorComponent(entity) {
@@ -849,8 +914,8 @@ function renderLightRgbTextSensorComponent(entity) {
         auto color = lv_color_make(r, g, b);
         lv_obj_set_style_bg_color(id(${getWidgetId(entity, 0)}_bubble), color, 0);
         lv_obj_set_style_bg_color(id(${getWidgetId(entity, 0)}_orange_fill), color, 0);
-        lv_obj_set_style_bg_color(id(${getWidgetId(entity, 0)}_wrapper), color, 0);
-        lv_obj_set_style_image_recolor(id(${getWidgetId(entity, 0)}_icon), color, 0);`;
+        // lv_obj_set_style_image_recolor(id(${getWidgetId(entity, 0)}_icon), color, 0);
+        lv_obj_set_style_bg_color(id(${getWidgetId(entity, 0)}_wrapper), color, 0);`;
 }
 
 function renderLightStateTextSensorComponent(entity) {
@@ -967,7 +1032,183 @@ function renderWidget(entity) {
   if (entity.type === "light") {
     return renderLightWidget(entity);
   }
+  if (entity.type === "cover") {
+    return renderCoverWidget(entity);
+  }
   return renderThermoHygrometerWidget(entity);
+}
+
+function renderCoverWidget(entity) {
+  const sliderWidth = Math.max(entity.props.width - 94, 80);
+  const controlWidth = Math.max(Math.floor((entity.props.width - 32) / 3), 48);
+  return `- obj:
+    id: ${getContainerId(entity)}
+    x: ${entity.props.x}
+    y: ${entity.props.y}
+    width: ${entity.props.width}
+    height: ${entity.props.height}
+    radius: 14
+    border_width: 1
+    border_color: 0xD7DDD9
+    pad_all: 0
+    bg_opa: COVER
+    bg_color: 0xF8FBF9
+    shadow_width: 4
+    shadow_color: 0x1F2933
+    shadow_opa: 6%
+    scrollable: false
+    scrollbar_mode: "OFF"
+    widgets:
+      - label:
+          align: TOP_MID
+          x: 0
+          y: 4
+          text_font: ${UI_FONT_BODY}
+          text: ${quoteYaml(entity.props.title)}
+          text_color: 0x24323A
+      - label:
+          id: ${getValueLabelId(entity, 0)}
+          align: TOP_MID
+          x: 0
+          y: 23
+          text_font: ${UI_FONT_BODY}
+          text: "current: --%"
+          text_color: 0xD64343
+      - button:
+          x: 8
+          y: 45
+          width: ${controlWidth}
+          height: 28
+          radius: 10
+          border_width: 1
+          border_color: 0xD7DDD9
+          bg_opa: COVER
+          bg_color: 0xEEF3F0
+          shadow_width: 0
+          scrollable: false
+          widgets:
+            - label:
+                align: CENTER
+                text_font: ${UI_FONT_BODY}
+                text: "CLOSE"
+                text_color: 0x24323A
+          on_click:
+            - homeassistant.action:
+                action: cover.close_cover
+                data:
+                  entity_id: ${quoteYaml(entity.entityids[0])}
+      - button:
+          x: ${Math.max(Math.floor((entity.props.width - controlWidth) / 2), 8)}
+          y: 45
+          width: ${controlWidth}
+          height: 28
+          radius: 10
+          border_width: 1
+          border_color: 0xD7DDD9
+          bg_opa: COVER
+          bg_color: 0xF5F0E8
+          shadow_width: 0
+          scrollable: false
+          widgets:
+            - label:
+                align: CENTER
+                text_font: ${UI_FONT_BODY}
+                text: "STOP"
+                text_color: 0x24323A
+          on_click:
+            - homeassistant.action:
+                action: cover.stop_cover
+                data:
+                  entity_id: ${quoteYaml(entity.entityids[0])}
+      - button:
+          x: ${Math.max(entity.props.width - controlWidth - 8, 8)}
+          y: 45
+          width: ${controlWidth}
+          height: 28
+          radius: 10
+          border_width: 1
+          border_color: 0xD7DDD9
+          bg_opa: COVER
+          bg_color: 0xEEF3F0
+          shadow_width: 0
+          scrollable: false
+          widgets:
+            - label:
+                align: CENTER
+                text_font: ${UI_FONT_BODY}
+                text: "OPEN"
+                text_color: 0x24323A
+          on_click:
+            - homeassistant.action:
+                action: cover.open_cover
+                data:
+                  entity_id: ${quoteYaml(entity.entityids[0])}
+      - label:
+          align: BOTTOM_LEFT
+          x: 6
+          y: -14
+          text_font: ${UI_FONT_BODY}
+          text: "0%"
+          text_color: 0x24323A
+      - label:
+          align: BOTTOM_RIGHT
+          x: -8
+          y: -14
+          text_font: ${UI_FONT_BODY}
+          text: "100%"
+          text_color: 0x24323A
+      - slider:
+          id: ${getWidgetId(entity, 0)}
+          x: 44
+          y: ${entity.props.height - 27}
+          width: ${sliderWidth}
+          height: 10
+          min_value: 0
+          max_value: 100
+          radius: 10
+          bg_color: 0xD8DBE2
+          border_width: 0
+          knob:
+            bg_color: 0xFFFFFF
+            border_color: 0x6688EE
+            border_width: 1
+            width: 10
+            height: 10
+            pad_all: 0
+            shadow_width: 0
+          indicator:
+            bg_color: 0x6688EE
+          on_change:
+            then:
+              - if:
+                  condition:
+                    lambda: |-
+                      return !id(${getCoverSyncingFlagId(entity)}) && lv_indev_get_act() != nullptr;
+                  then:
+                    - lvgl.label.update:
+                        id: ${getValueLabelId(entity, 0)}
+                        text: !lambda |-
+                          static char buf[20];
+                          int value = (int) x;
+                          if (value < 0) value = 0;
+                          if (value > 100) value = 100;
+                          sprintf(buf, "current: %d%%", value);
+                          return buf;
+          on_release:
+            then:
+              - if:
+                  condition:
+                    lambda: |-
+                      return !id(${getCoverSyncingFlagId(entity)}) && lv_indev_get_act() != nullptr;
+                  then:
+                    - homeassistant.action:
+                        action: cover.set_cover_position
+                        data:
+                          entity_id: ${quoteYaml(entity.entityids[0])}
+                        data_template:
+                          position: "{{ position }}"
+                        variables:
+                          position: !lambda "return (int)x;"`;
 }
 
 function renderMultiSwitchWidget(entity) {
