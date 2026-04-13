@@ -4,6 +4,9 @@ import {
   DEFAULT_COVER_HEIGHT,
   DEFAULT_COVER_WIDTH,
   DEFAULT_HEIGHT,
+  DEFAULT_HMI_SCREEN_BRIGHTNESS_HEIGHT,
+  DEFAULT_HMI_SCREEN_BRIGHTNESS_SLIDER_COLOR,
+  DEFAULT_HMI_SCREEN_BRIGHTNESS_WIDTH,
   DEFAULT_MULTI_SWITCH_HEIGHT,
   DEFAULT_MULTI_SWITCH_WIDTH,
   LIGHT_DEFAULT_ICON_SIZE,
@@ -17,6 +20,7 @@ import {
   DEFAULT_THERMO_WIDTH,
   DEFAULT_WIDTH,
   ENTITY_CAPABILITIES,
+  HMI_SCREEN_BRIGHTNESS_STYLE_TILE,
   LIGHT_ICON_PATHS,
   LIGHT_TILE_ICON_POSITION_DEFAULT,
   LIGHT_STYLE_ICON,
@@ -156,22 +160,39 @@ export function generateSpecYaml(state) {
 
 function appendEntityYaml(lines, entity, indent = "  ") {
   const propIndent = `${indent}  `;
-  if (entity.type === "switch" || entity.type === "light" || entity.type === "cover") {
+  if (entity.type === "hmi_screen_brightness") {
+    lines.push(`${indent}- type: ${entity.type}`);
+  } else if (entity.type === "switch" || entity.type === "light" || entity.type === "cover") {
     lines.push(`${indent}- entityid: ${quoteYaml(entity.entityids[0])}`);
   } else {
     lines.push(`${indent}- entityids:`);
     entity.entityids.forEach((entityId) => {
       lines.push(`${propIndent}    - ${quoteYaml(entityId)}`);
     });
+    lines.push(`${propIndent}type: ${entity.type}`);
   }
-  lines.push(`${propIndent}type: ${entity.type}`);
+  if (entity.type !== "hmi_screen_brightness" && entity.type !== "switch" && entity.type !== "light" && entity.type !== "cover") {
+    // already emitted above for multi-value widgets
+  } else if (entity.type !== "hmi_screen_brightness") {
+    lines.push(`${propIndent}type: ${entity.type}`);
+  }
   lines.push(`${propIndent}props:`);
   lines.push(`${propIndent}  style: ${quoteYaml(normalizeStyle(entity.type, entity.props.style))}`);
   lines.push(`${propIndent}  x: ${entity.props.x}`);
   lines.push(`${propIndent}  y: ${entity.props.y}`);
   lines.push(`${propIndent}  width: ${entity.props.width}`);
-  lines.push(`${propIndent}  height: ${entity.props.height}`);
+  if (!hasFixedHeight(entity.type, entity.props.style)) {
+    lines.push(`${propIndent}  height: ${entity.props.height}`);
+  }
   lines.push(`${propIndent}  title: ${quoteYaml(entity.props.title)}`);
+  if (entity.type === "hmi_screen_brightness") {
+    if (entity.props.show_header === false) {
+      lines.push(`${propIndent}  show_header: false`);
+    }
+    if (entity.props.slider_color) {
+      lines.push(`${propIndent}  slider_color: ${quoteYaml(entity.props.slider_color)}`);
+    }
+  }
   if (entity.type === "thermo_hygrometer") {
     if (normalizeIconSource(entity.props.temp_icon)) {
       lines.push(`${propIndent}  temp_icon: ${quoteYaml(entity.props.temp_icon)}`);
@@ -364,6 +385,17 @@ export function parseSpecYaml(source) {
       inEntityIds = false;
       return;
     }
+    if (trimmed.startsWith("- type:")) {
+      pushCurrentEntity();
+      currentEntity = {
+        entityids: [],
+        type: readYamlValue(trimmed.slice("- type:".length).trim()),
+        props: {},
+      };
+      inProps = false;
+      inEntityIds = false;
+      return;
+    }
     if (trimmed === "- entityids:") {
       pushCurrentEntity();
       currentEntity = {
@@ -447,7 +479,10 @@ export function normalizeEntity(entity, canvasWidth = BOARD_CONFIGS.nextion_35.w
   const props = entity.props || {};
   const style = normalizeStyle(type, props.style);
   const width = clampNumber(props.width ?? defaultWidthForType(type, style), minWidthForType(type, style), canvasWidth);
-  const height = clampNumber(props.height ?? defaultHeightForType(type, style, props), minHeightForType(type, style, props), canvasHeight);
+  const fixedHeight = hasFixedHeight(type, style);
+  const height = fixedHeight
+    ? defaultHeightForType(type, style, props)
+    : clampNumber(props.height ?? defaultHeightForType(type, style, props), minHeightForType(type, style, props), canvasHeight);
   const entityids = normalizeEntityIds(entity, type);
   return {
     id: `id-${Math.random().toString(36).slice(2, 11)}`,
@@ -485,6 +520,10 @@ export function normalizeEntity(entity, canvasWidth = BOARD_CONFIGS.nextion_35.w
       preview_color_temp: clampNumber(props.preview_color_temp ?? props.previewColorTemp ?? 50, 0, 100),
       preview_hue: clampNumber(props.preview_hue ?? props.previewHue ?? LIGHT_DEFAULT_PREVIEW_HUE, 0, 360),
       active_bg_color: normalizeOptionalColor(props.active_bg_color || props.active_color || props.on_color),
+      show_header: type === "hmi_screen_brightness" ? props.show_header !== false : true,
+      slider_color: type === "hmi_screen_brightness"
+        ? normalizeYamlColor(props.slider_color || props.sliderColor || DEFAULT_HMI_SCREEN_BRIGHTNESS_SLIDER_COLOR)
+        : "",
     },
   };
 }
@@ -503,11 +542,13 @@ export function updateCanvasDimensions(state) {
   screens.forEach((screen) => {
     screen.entities.forEach((entity) => {
       entity.props.width = clamp(entity.props.width, minWidthForType(entity.type), state.canvasWidth);
-      entity.props.height = clamp(
-        entity.props.height,
-        minHeightForType(entity.type, entity.props.style, entity.props),
-        state.canvasHeight
-      );
+      entity.props.height = hasFixedHeight(entity.type, entity.props.style)
+        ? defaultHeightForType(entity.type, entity.props.style, entity.props)
+        : clamp(
+            entity.props.height,
+            minHeightForType(entity.type, entity.props.style, entity.props),
+            state.canvasHeight
+          );
       entity.props.x = clamp(entity.props.x, 0, state.canvasWidth - entity.props.width);
       entity.props.y = clamp(entity.props.y, 0, state.canvasHeight - entity.props.height);
     });
@@ -546,6 +587,9 @@ export function normalizeType(value) {
   if (value === "cover") {
     return "cover";
   }
+  if (value === "hmi_screen_brightness") {
+    return "hmi_screen_brightness";
+  }
   if (value === "light") {
     return "light";
   }
@@ -561,6 +605,9 @@ export function normalizeStyle(type, value) {
   }
   if (type === "cover") {
     return COVER_STYLE_COMPACT;
+  }
+  if (type === "hmi_screen_brightness") {
+    return HMI_SCREEN_BRIGHTNESS_STYLE_TILE;
   }
   if (type === "light") {
     if (value === LIGHT_STYLE_TILE) return LIGHT_STYLE_TILE;
@@ -579,6 +626,9 @@ export function defaultTitleForType(type, entityids) {
   }
   if (type === "cover") {
     return deriveTitle(entityids[0]);
+  }
+  if (type === "hmi_screen_brightness") {
+    return "HMI Screen";
   }
   if (type === "light") {
     return deriveTitle(entityids[0]);
@@ -599,6 +649,9 @@ export function defaultWidthForType(type, style) {
   }
   if (type === "cover") {
     return DEFAULT_COVER_WIDTH;
+  }
+  if (type === "hmi_screen_brightness") {
+    return DEFAULT_HMI_SCREEN_BRIGHTNESS_WIDTH;
   }
   if (type === "light") {
     if (style === LIGHT_STYLE_TILE) return 120;
@@ -622,6 +675,9 @@ export function defaultHeightForType(type, style = SWITCH_STYLE_TOGGLE, props = 
   if (type === "cover") {
     return DEFAULT_COVER_HEIGHT;
   }
+  if (type === "hmi_screen_brightness") {
+    return DEFAULT_HMI_SCREEN_BRIGHTNESS_HEIGHT;
+  }
   if (type === "light") {
     if (style === LIGHT_STYLE_TILE) return 120;
     if (style === LIGHT_STYLE_SLIDER) return 112 + getLightSliderExtraRowCount(props) * 40;
@@ -638,6 +694,9 @@ export function minWidthForType(type, style) {
     return 180;
   }
   if (type === "cover") {
+    return 180;
+  }
+  if (type === "hmi_screen_brightness") {
     return 180;
   }
   if (type === "light") {
@@ -657,6 +716,9 @@ export function minHeightForType(type, style = SWITCH_STYLE_TOGGLE, props = {}) 
   }
   if (type === "cover") {
     return 120;
+  }
+  if (type === "hmi_screen_brightness") {
+    return DEFAULT_HMI_SCREEN_BRIGHTNESS_HEIGHT;
   }
   if (type === "light") {
     if (style === LIGHT_STYLE_SLIDER) return 80 + getLightSliderExtraRowCount(props) * 30;
@@ -737,7 +799,15 @@ export function usesTopAlignedTitle(entity) {
 }
 
 export function shouldRenderWidgetTitle(entity) {
-  return entity.type !== "thermo_hygrometer" && entity.type !== "light" && entity.type !== "cover";
+  return entity.type !== "thermo_hygrometer" && entity.type !== "light" && entity.type !== "cover" && entity.type !== "hmi_screen_brightness";
+}
+
+export function hasFixedHeight(type) {
+  return false;
+}
+
+export function supportsHeightResize(type) {
+  return !hasFixedHeight(type);
 }
 
 export function deriveTitle(entityId) {

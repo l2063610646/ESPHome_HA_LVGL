@@ -187,6 +187,7 @@
                 <option value="multi_switch">multi_switch</option>
                 <option value="thermo_hygrometer">thermo_hygrometer</option>
                 <option value="cover">cover</option>
+                <option value="hmi_screen_brightness">hmi_screen_brightness</option>
                 <option value="light">light</option>
               </select>
             </label>
@@ -259,6 +260,22 @@
                   <input id="field-active-bg-color" type="color" value="#d7e9dd" />
                   <span id="field-active-bg-color-hex" class="color-hex-label">#D7E9DD</span>
                   <button id="field-active-bg-color-copy" type="button" class="copy-hex-btn" title="Copy HEX">
+                    <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                  </button>
+                </div>
+              </label>
+            </div>
+            <div id="hmi-brightness-fields" class="hidden">
+              <label style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px; font-size: 13px; color: #596775; cursor: pointer;">
+                <input id="field-hmi-show-header" type="checkbox" style="cursor: pointer;" />
+                <span>Show Header</span>
+              </label>
+              <label class="stack">
+                <span>Slider Color</span>
+                <div class="color-picker-row">
+                  <input id="field-hmi-slider-color" type="color" value="#FDBB13" />
+                  <span id="field-hmi-slider-color-hex" class="color-hex-label">#FDBB13</span>
+                  <button id="field-hmi-slider-color-copy" type="button" class="copy-hex-btn" title="Copy HEX">
                     <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
                   </button>
                 </div>

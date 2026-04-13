@@ -29,6 +29,7 @@ import {
   normalizeIconSource,
   normalizeStyle,
   shouldRenderWidgetTitle,
+  supportsHeightResize,
   usesTopAlignedTitle,
   yamlColorToCss,
   yamlColorToHtml,
@@ -97,6 +98,8 @@ export function renderCanvas(state, elements, callbacks) {
       widget.append(renderThermoHygrometerPreview(entity));
     } else if (entity.type === "cover") {
       widget.append(renderCoverPreview(entity));
+    } else if (entity.type === "hmi_screen_brightness") {
+      widget.append(renderHmiScreenBrightnessPreview(entity));
     } else {
       widget.append(renderLightPreview(entity));
     }
@@ -108,7 +111,7 @@ export function renderCanvas(state, elements, callbacks) {
 
     if (entity.id === state.selectedId) {
       const resizeHandle = document.createElement("span");
-      resizeHandle.className = "resize-handle";
+      resizeHandle.className = `resize-handle${supportsHeightResize(entity.type, entity.props.style) ? "" : " width-only"}`;
       resizeHandle.title = "Drag to resize";
       resizeHandle.addEventListener("pointerdown", (event) => onResizeStart(event, entity, resizeHandle));
       widget.append(resizeHandle);
@@ -125,7 +128,8 @@ export function renderEntityList(state, entityList, template, onSelect) {
   state.entities.forEach((entity, index) => {
     const item = template.content.firstElementChild.cloneNode(true);
     item.classList.toggle("active", entity.id === state.selectedId);
-    item.innerHTML = `<strong>${index + 1}. ${entity.props.title}</strong><span>${entity.type} · ${entity.entityids.join(" / ")}</span>`;
+    const idSummary = entity.entityids.length ? entity.entityids.join(" / ") : "local device control";
+    item.innerHTML = `<strong>${index + 1}. ${entity.props.title}</strong><span>${entity.type} · ${idSummary}</span>`;
     item.addEventListener("click", () => onSelect(entity.id, "Entity selected"));
     entityList.append(item);
   });
@@ -157,6 +161,7 @@ export function renderInspector(entity, elements) {
     switchStyleFields,
     multiSwitchFields,
     thermoIconFields,
+    hmiBrightnessFields,
     lightIconFields,
     lightTilePositionFields,
     fieldType,
@@ -175,6 +180,8 @@ export function renderInspector(entity, elements) {
     fieldHumIcon,
     fieldLightIcon,
     fieldLightTileIconPosition,
+    fieldHmiShowHeader,
+    fieldHmiSliderColor,
     lightSliderFields,
     fieldColorTemp,
     multiSwitchEnabledInputs,
@@ -192,12 +199,13 @@ export function renderInspector(entity, elements) {
 
   const capability = getEntityCapability(entity.type);
   const hasSecondEntity = capability.entityFields.length > 1 && entity.type !== "multi_switch";
-  fieldEntityIdRow.classList.toggle("hidden", entity.type === "multi_switch");
+  fieldEntityIdRow.classList.toggle("hidden", entity.type === "multi_switch" || capability.entityFields.length === 0);
   dualFields.classList.toggle("hidden", !hasSecondEntity);
   const showStyle = capability.styleOptions && capability.styleOptions.length > 0;
   switchStyleFields.classList.toggle("hidden", !showStyle);
   multiSwitchFields.classList.toggle("hidden", entity.type !== "multi_switch");
   thermoIconFields.classList.toggle("hidden", entity.type !== "thermo_hygrometer");
+  hmiBrightnessFields.classList.toggle("hidden", entity.type !== "hmi_screen_brightness");
   lightIconFields.classList.toggle("hidden", entity.type !== "light");
   lightTilePositionFields.classList.toggle("hidden", !(entity.type === "light" && (entity.props.style === LIGHT_STYLE_TILE || entity.props.style === LIGHT_STYLE_SLIDER)));
   lightSliderFields.classList.toggle("hidden", !(entity.type === "light" && entity.props.style === LIGHT_STYLE_SLIDER));
@@ -214,10 +222,16 @@ export function renderInspector(entity, elements) {
   fieldY.value = entity.props.y;
   fieldWidth.value = entity.props.width;
   fieldHeight.value = entity.props.height;
+  fieldHeight.disabled = !supportsHeightResize(entity.type, entity.props.style);
   fieldTempIcon.value = entity.props.temp_icon ?? "";
   fieldHumIcon.value = entity.props.hum_icon ?? "";
   fieldLightIcon.value = entity.props.icon ?? "";
   fieldLightTileIconPosition.value = entity.props.tile_icon_position ?? LIGHT_TILE_ICON_POSITION_DEFAULT;
+  fieldHmiShowHeader.checked = entity.props.show_header !== false;
+  fieldHmiSliderColor.value = yamlColorToHtml(entity.props.slider_color || "#FDBB13");
+  if (elements.fieldHmiSliderColorHex) {
+    elements.fieldHmiSliderColorHex.textContent = fieldHmiSliderColor.value.toUpperCase();
+  }
   fieldColorTemp.checked = entity.props.color_temp ?? false;
   elements.fieldHue360.checked = entity.props.hue_360 ?? false;
   multiSwitchEnabledInputs?.forEach((input, index) => {
@@ -501,6 +515,43 @@ function renderCoverPreview(entity) {
   current.style.width = `${Math.max(entity.props.width - 24, 60)}px`;
   group.append(title, current, minLabel, maxLabel, controls, slider);
 
+  return group;
+}
+
+function renderHmiScreenBrightnessPreview(entity) {
+  const group = document.createElement("div");
+  group.className = `hmi-brightness-group${entity.props.show_header === false ? " no-header" : ""}`;
+
+  if (entity.props.show_header !== false) {
+    const header = document.createElement("div");
+    header.className = "hmi-brightness-header";
+
+    const title = document.createElement("span");
+    title.className = "hmi-brightness-title";
+    title.textContent = entity.props.title;
+
+    const value = document.createElement("span");
+    value.className = "hmi-brightness-value";
+    value.textContent = "50%";
+    header.append(title, value);
+    group.append(header);
+  }
+
+  const slider = document.createElement("div");
+  slider.className = "hmi-brightness-slider";
+  slider.style.backgroundColor = "rgba(36, 50, 58, 0.1)";
+
+  const fill = document.createElement("div");
+  fill.className = "hmi-brightness-slider-fill";
+  fill.style.width = "50%";
+  fill.style.backgroundColor = yamlColorToCss(entity.props.slider_color || "#FDBB13");
+
+  const thumb = document.createElement("div");
+  thumb.className = "hmi-brightness-slider-thumb";
+
+  fill.append(thumb);
+  slider.append(fill);
+  group.append(slider);
   return group;
 }
 

@@ -22,6 +22,10 @@ export const THERMO_VALUE_BOX_HEIGHT = 80;
 export const COVER_STYLE_COMPACT = "compact";
 export const DEFAULT_COVER_WIDTH = 195;
 export const DEFAULT_COVER_HEIGHT = 132;
+export const HMI_SCREEN_BRIGHTNESS_STYLE_TILE = "tile";
+export const DEFAULT_HMI_SCREEN_BRIGHTNESS_WIDTH = 220;
+export const DEFAULT_HMI_SCREEN_BRIGHTNESS_HEIGHT = 60;
+export const DEFAULT_HMI_SCREEN_BRIGHTNESS_SLIDER_COLOR = "0xFDBB13";
 export const LIGHT_STYLE_ICON = "icon";
 export const LIGHT_STYLE_TILE = "tile";
 export const LIGHT_STYLE_SLIDER = "slider";
@@ -165,6 +169,29 @@ export const ENTITY_CAPABILITIES = {
           height: DEFAULT_COVER_HEIGHT,
           title: `Curtain ${index}`,
           style: COVER_STYLE_COMPACT,
+        },
+      };
+    },
+  },
+  hmi_screen_brightness: {
+    label: "hmi-screen-brightness",
+    entityFields: [],
+    styleOptions: [
+      { value: HMI_SCREEN_BRIGHTNESS_STYLE_TILE, label: "tile" },
+    ],
+    createEntity(index) {
+      return {
+        entityids: [],
+        type: "hmi_screen_brightness",
+        props: {
+          x: 24,
+          y: 24,
+          width: DEFAULT_HMI_SCREEN_BRIGHTNESS_WIDTH,
+          height: DEFAULT_HMI_SCREEN_BRIGHTNESS_HEIGHT,
+          title: `HMI Screen ${index}`,
+          style: HMI_SCREEN_BRIGHTNESS_STYLE_TILE,
+          show_header: true,
+          slider_color: DEFAULT_HMI_SCREEN_BRIGHTNESS_SLIDER_COLOR,
         },
       };
     },

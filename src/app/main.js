@@ -32,6 +32,7 @@ import {
   normalizeYamlColor,
   parseSpecYaml,
   readPendingNumber,
+  supportsHeightResize,
   updateCanvasDimensions,
   yamlColorToHtml,
   htmlColorToYaml,
@@ -95,12 +96,17 @@ const elements = {
   multiSwitchFields: document.getElementById("multi-switch-fields"),
   thermoIconFields: document.getElementById("thermo-icon-fields"),
   lightIconFields: document.getElementById("light-icon-fields"),
+  hmiBrightnessFields: document.getElementById("hmi-brightness-fields"),
   lightTilePositionFields: document.getElementById("light-tile-position-fields"),
   lightSliderFields: document.getElementById("light-slider-fields"),
   fieldTempIcon: document.getElementById("field-temp-icon"),
   fieldHumIcon: document.getElementById("field-hum-icon"),
   fieldLightIcon: document.getElementById("field-light-icon"),
   fieldLightTileIconPosition: document.getElementById("field-light-tile-icon-position"),
+  fieldHmiShowHeader: document.getElementById("field-hmi-show-header"),
+  fieldHmiSliderColor: document.getElementById("field-hmi-slider-color"),
+  fieldHmiSliderColorHex: document.getElementById("field-hmi-slider-color-hex"),
+  fieldHmiSliderColorCopy: document.getElementById("field-hmi-slider-color-copy"),
   fieldColorTemp: document.getElementById("field-color-temp"),
   fieldHue360: document.getElementById("field-hue-360"),
   tempIconPreviewImg: document.getElementById("temp-icon-preview-img"),
@@ -300,6 +306,8 @@ elements.deleteBtn.addEventListener("click", () => {
   elements.fieldActiveBgColor,
   elements.fieldLightPreviewCt,
   elements.fieldLightPreviewHue,
+  elements.fieldHmiShowHeader,
+  elements.fieldHmiSliderColor,
   ...elements.multiSwitchEnabledInputs,
   ...elements.multiSwitchEntityInputs,
   ...elements.multiSwitchTitleInputs,
@@ -343,6 +351,10 @@ elements.screenBgColorCopy?.addEventListener("click", () => {
 
 elements.fieldActiveBgColorCopy?.addEventListener("click", () => {
   handleCopyColor(elements.fieldActiveBgColor.value, elements.fieldActiveBgColorCopy);
+});
+
+elements.fieldHmiSliderColorCopy?.addEventListener("click", () => {
+  handleCopyColor(elements.fieldHmiSliderColor.value, elements.fieldHmiSliderColorCopy);
 });
 
 if (elements.screenPalette) {
@@ -424,11 +436,13 @@ elements.canvas.addEventListener("pointermove", (event) => {
       minWidthForType(entity.type),
       state.canvasWidth - entity.props.x
     );
-    entity.props.height = clamp(
-      Math.round(state.drag.startHeight + (position.y - state.drag.startY)),
-      minHeightForType(entity.type, entity.props.style, entity.props),
-      state.canvasHeight - entity.props.y
-    );
+    if (supportsHeightResize(entity.type, entity.props.style)) {
+      entity.props.height = clamp(
+        Math.round(state.drag.startHeight + (position.y - state.drag.startY)),
+        minHeightForType(entity.type, entity.props.style, entity.props),
+        state.canvasHeight - entity.props.y
+      );
+    }
     setStatus(`Resizing ${entity.props.title}`);
   }
   renderApp();
@@ -516,12 +530,16 @@ function handleInspectorChange() {
   }
 
   entity.props.style = normalizeStyle(entity.type, elements.fieldStyle.value || entity.props.style);
+  if (!supportsHeightResize(entity.type, entity.props.style)) {
+    entity.props.height = minHeightForType(entity.type, entity.props.style, entity.props);
+  }
 
+  const capability = getEntityCapability(entity.type);
   const trimmedEntityId = elements.fieldEntityId.value.trim();
-  if (trimmedEntityId) {
+  if (capability.entityFields.length > 0 && trimmedEntityId) {
     entity.entityids[0] = trimmedEntityId;
   }
-  if (entity.type === "thermo_hygrometer") {
+  if (entity.type === "thermo_hygrometer" && capability.entityFields.length > 1) {
     const trimmedEntityId2 = elements.fieldEntityId2.value.trim();
     if (trimmedEntityId2) {
       entity.entityids[1] = trimmedEntityId2;
@@ -543,6 +561,11 @@ function handleInspectorChange() {
     entity.props.temp_icon = normalizeIconSource(elements.fieldTempIcon.value);
     entity.props.hum_icon = normalizeIconSource(elements.fieldHumIcon.value);
   }
+  if (entity.type === "hmi_screen_brightness") {
+    entity.props.show_header = elements.fieldHmiShowHeader.checked;
+    entity.props.slider_color = htmlColorToYaml(elements.fieldHmiSliderColor.value);
+    updateColorHexLabel(elements.fieldHmiSliderColor, elements.fieldHmiSliderColorHex);
+  }
   if (entity.type === "light") {
     entity.props.icon = normalizeIconSource(elements.fieldLightIcon.value);
     entity.props.tile_icon_position = elements.fieldLightTileIconPosition.value.trim() || entity.props.tile_icon_position;
@@ -552,6 +575,9 @@ function handleInspectorChange() {
     entity.props.preview_hue = parseInt(elements.fieldLightPreviewHue.value, 10);
     entity.props.height = Math.max(entity.props.height, minHeightForType(entity.type, entity.props.style, entity.props));
   }
+  if (!supportsHeightResize(entity.type, entity.props.style)) {
+    entity.props.height = minHeightForType(entity.type, entity.props.style, entity.props);
+  }
 
   const pendingWidth = readPendingNumber(elements.fieldWidth.value);
   if (pendingWidth !== null) {
@@ -559,7 +585,7 @@ function handleInspectorChange() {
   }
 
   const pendingHeight = readPendingNumber(elements.fieldHeight.value);
-  if (pendingHeight !== null) {
+  if (pendingHeight !== null && supportsHeightResize(entity.type, entity.props.style)) {
     entity.props.height = clamp(
       pendingHeight,
       minHeightForType(entity.type, entity.props.style, entity.props),
@@ -614,6 +640,11 @@ function handleInspectorCommit() {
     entity.props.temp_icon = normalizeIconSource(elements.fieldTempIcon.value);
     entity.props.hum_icon = normalizeIconSource(elements.fieldHumIcon.value);
   }
+  if (entity.type === "hmi_screen_brightness") {
+    entity.props.show_header = elements.fieldHmiShowHeader.checked;
+    entity.props.slider_color = htmlColorToYaml(elements.fieldHmiSliderColor.value);
+    updateColorHexLabel(elements.fieldHmiSliderColor, elements.fieldHmiSliderColorHex);
+  }
   if (entity.type === "light") {
     entity.props.color_temp = elements.fieldColorTemp.checked;
     entity.props.hue_360 = elements.fieldHue360.checked;
@@ -629,11 +660,15 @@ function handleInspectorCommit() {
     minWidthForType(entity.type, entity.props.style),
     state.canvasWidth
   );
-  entity.props.height = clampNumber(
-    elements.fieldHeight.value,
-    minHeightForType(entity.type, entity.props.style, entity.props),
-    state.canvasHeight
-  );
+  if (supportsHeightResize(entity.type, entity.props.style)) {
+    entity.props.height = clampNumber(
+      elements.fieldHeight.value,
+      minHeightForType(entity.type, entity.props.style, entity.props),
+      state.canvasHeight
+    );
+  } else {
+    entity.props.height = minHeightForType(entity.type, entity.props.style, entity.props);
+  }
   entity.props.x = clamp(clampNumber(elements.fieldX.value, 0, state.canvasWidth), 0, state.canvasWidth - entity.props.width);
   entity.props.y = clamp(clampNumber(elements.fieldY.value, 0, state.canvasHeight), 0, state.canvasHeight - entity.props.height);
 

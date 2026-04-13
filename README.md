@@ -51,6 +51,8 @@ Internally, the editor stores page state in a compact YAML-friendly shape:
   Uses up to four switch `entityids`. Visibility is controlled per channel with `props.channel_1_enabled` through `props.channel_4_enabled`.
 - `type: light`
   Uses one `entityid`.
+- `type: hmi_screen_brightness`
+  Uses no Home Assistant `entityid`. This widget controls the local HMI backlight.
 - `type: thermo_hygrometer`
   Uses exactly two `entityids`, ordered as temperature sensor then humidity sensor.
 - Common widget metadata lives in `props`
@@ -70,6 +72,12 @@ Supported styles:
   Optional for `light.props.style: slider`. Adds a color temperature slider.
 - `light.props.hue_360`
   Optional for `light.props.style: slider`. Adds a 360-degree hue slider and generates `rgb_color` output.
+- `hmi_screen_brightness.props.style: tile`
+  Shows an optional header row with HMI screen name on the left and current brightness on the right, plus a slider with a minimum value of `10%`.
+- `hmi_screen_brightness.props.show_header`
+  Optional. Defaults to `true`.
+- `hmi_screen_brightness.props.slider_color`
+  Optional slider fill color in YAML color format such as `0xFDBB13`.
 - `thermo_hygrometer.props.style: compact`
 
 Example:
@@ -113,6 +121,16 @@ screens:
           width: 220
           height: 112
           title: "Climate"
+      - type: hmi_screen_brightness
+        props:
+          style: "tile"
+          x: 24
+          y: 180
+          width: 220
+          height: 60
+          title: "Main HMI"
+          show_header: true
+          slider_color: "0xFDBB13"
 ```
 
 ## Workflow
@@ -134,6 +152,7 @@ In the app you can:
 - set the LVGL screen background color
 - add, remove, rename, and switch between multiple screens
 - drag and resize widgets
+- drag and resize `hmi_screen_brightness` tiles; slider size follows the widget size
 - edit the page through the visual editor
 - inspect or paste YAML in the spec text area when needed
 - generate the final ESPHome YAML locally in the browser
