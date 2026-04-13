@@ -25,6 +25,7 @@ import {
   normalizeSwipeDirection,
   quoteYaml,
 } from "./spec.js";
+import { renderEsphomeWidgetByComponent } from "./components/esphome/registry.js";
 
 const UI_FONT_BODY = "montserrat_14";
 const UI_FONT_VALUE = "montserrat_16";
@@ -1098,24 +1099,16 @@ ${onStateYaml}`;
 }
 
 function renderWidget(entity) {
-  if (entity.type === "multi_switch") {
-    return entity.props.style === MULTI_SWITCH_STYLE_LIST ? renderMultiSwitchListWidget(entity) : renderMultiSwitchWidget(entity);
-  }
-  if (entity.type === "switch") {
-    return entity.props.style === "button"
-        ? renderSingleSwitchButtonWidget(entity)
-        : renderSingleSwitchToggleWidget(entity);
-  }
-  if (entity.type === "light") {
-    return renderLightWidget(entity);
-  }
-  if (entity.type === "cover") {
-    return renderCoverWidget(entity);
-  }
-  if (entity.type === "hmi_screen_brightness") {
-    return renderHmiScreenBrightnessWidget(entity);
-  }
-  return renderThermoHygrometerWidget(entity);
+  return renderEsphomeWidgetByComponent(entity, {
+    renderCoverWidget,
+    renderHmiScreenBrightnessWidget,
+    renderLightWidget,
+    renderMultiSwitchListWidget,
+    renderMultiSwitchWidget,
+    renderSingleSwitchButtonWidget,
+    renderSingleSwitchToggleWidget,
+    renderThermoHygrometerWidget,
+  });
 }
 
 function renderCoverWidget(entity) {
