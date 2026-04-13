@@ -26,6 +26,10 @@ export const HMI_SCREEN_BRIGHTNESS_STYLE_TILE = "tile";
 export const DEFAULT_HMI_SCREEN_BRIGHTNESS_WIDTH = 220;
 export const DEFAULT_HMI_SCREEN_BRIGHTNESS_HEIGHT = 60;
 export const DEFAULT_HMI_SCREEN_BRIGHTNESS_SLIDER_COLOR = "0xFDBB13";
+export const HMI_SCREEN_BRIGHTNESS_PADDING = 10;
+export const HMI_SCREEN_BRIGHTNESS_HEADER_HEIGHT = 14;
+export const HMI_SCREEN_BRIGHTNESS_HEADER_GAP = 6;
+export const HMI_SCREEN_BRIGHTNESS_MIN_SLIDER_HEIGHT = 25;
 export const LIGHT_STYLE_ICON = "icon";
 export const LIGHT_STYLE_TILE = "tile";
 export const LIGHT_STYLE_SLIDER = "slider";
@@ -242,6 +246,39 @@ export function getEnabledSwitchIndices(entity) {
     return [0, 1, 2, 3].filter((index) => isMultiSwitchChannelEnabled(entity.props, index));
   }
   return (entity.entityids || []).map((_, index) => index);
+}
+
+export function getHmiScreenBrightnessLayout(width, height, showHeader = true) {
+  const padding = HMI_SCREEN_BRIGHTNESS_PADDING;
+  const headerHeight = showHeader ? HMI_SCREEN_BRIGHTNESS_HEADER_HEIGHT : 0;
+  const headerGap = showHeader ? HMI_SCREEN_BRIGHTNESS_HEADER_GAP : 0;
+  const sliderX = padding;
+  const sliderY = padding + headerHeight + headerGap;
+  const sliderWidth = Math.max(width - padding * 2, 80);
+  const sliderHeight = Math.max(height - sliderY - padding, HMI_SCREEN_BRIGHTNESS_MIN_SLIDER_HEIGHT);
+
+  return {
+    padding,
+    header: {
+      x: padding,
+      y: padding,
+      width: sliderWidth,
+      height: headerHeight,
+    },
+    slider: {
+      x: sliderX,
+      y: sliderY,
+      width: sliderWidth,
+      height: sliderHeight,
+    },
+  };
+}
+
+export function getHmiScreenBrightnessMinHeight(showHeader = true) {
+  return HMI_SCREEN_BRIGHTNESS_PADDING
+    + (showHeader ? HMI_SCREEN_BRIGHTNESS_HEADER_HEIGHT + HMI_SCREEN_BRIGHTNESS_HEADER_GAP : 0)
+    + HMI_SCREEN_BRIGHTNESS_MIN_SLIDER_HEIGHT
+    + HMI_SCREEN_BRIGHTNESS_PADDING;
 }
 
 export function getMultiSwitchLayout(width, height, count, hasTitle = true) {

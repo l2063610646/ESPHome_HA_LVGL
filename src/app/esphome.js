@@ -1,5 +1,6 @@
 import {
   DEFAULT_BUTTON_BG_COLOR,
+  getHmiScreenBrightnessLayout,
   getMultiSwitchChannelTitle,
   getMultiSwitchLayout,
   getEnabledSwitchIndices,
@@ -2107,11 +2108,9 @@ ${indentCodeBlock(renderHueRgbStatements("x / 100.0f"), 28)}
 }
 
 function renderHmiScreenBrightnessWidget(entity) {
-  const sliderWidth = Math.max(entity.props.width - 20, 80);
+  const layout = getHmiScreenBrightnessLayout(entity.props.width, entity.props.height, entity.props.show_header !== false);
   const sliderColor = normalizeYamlColor(entity.props.slider_color || "0xFDBB13");
   const headerVisible = entity.props.show_header !== false;
-  const sliderTop = headerVisible ? 30 : 10;
-  const sliderHeight = Math.max(entity.props.height - sliderTop - 10, 24);
   const headerUpdateYaml = entity.props.show_header === false ? "" : `                    - lvgl.label.update:
                         id: ${getBacklightValueLabelId(entity)}
                         text: !lambda |-
@@ -2119,26 +2118,37 @@ function renderHmiScreenBrightnessWidget(entity) {
                           sprintf(buf, "%d%%", (int) x);
                           return buf;
 `;
-  const headerYaml = entity.props.show_header === false ? "" : `      - label:
-          x: 10
-          y: 10
-          width: ${Math.max(entity.props.width - 80, 40)}
-          text_align: LEFT
-          long_mode: DOT
-          text_font: ${UI_FONT_BODY}
-          text: ${quoteYaml(entity.props.title)}
-          text_color: 0x24323A
-      - label:
-          id: ${getBacklightValueLabelId(entity)}
-          align: TOP_RIGHT
-          x: -10
-          y: 10
-          text_font: ${UI_FONT_BODY}
-          text: !lambda |-
-            static char buf[10];
-            sprintf(buf, "%d%%", id(backlight_percent));
-            return buf;
-          text_color: 0x596775
+  const headerYaml = entity.props.show_header === false ? "" : `      - obj:
+          x: ${layout.header.x}
+          y: ${layout.header.y}
+          width: ${layout.header.width}
+          height: ${layout.header.height}
+          border_width: 0
+          bg_opa: TRANSP
+          pad_all: 0
+          scrollable: false
+          scrollbar_mode: "OFF"
+          layout:
+            type: FLEX
+            flex_flow: ROW
+            flex_align_main: SPACE_BETWEEN
+            flex_align_cross: CENTER
+          widgets:
+            - label:
+                width: ${Math.max(layout.header.width - 60, 20)}
+                text_align: LEFT
+                long_mode: DOT
+                text_font: ${UI_FONT_BODY}
+                text: ${quoteYaml(entity.props.title)}
+                text_color: 0x24323A
+            - label:
+                id: ${getBacklightValueLabelId(entity)}
+                text_font: ${UI_FONT_BODY}
+                text: !lambda |-
+                  static char buf[10];
+                  sprintf(buf, "%d%%", id(backlight_percent));
+                  return buf;
+                text_color: 0x596775
 `;
   return `- obj:
     id: ${getContainerId(entity)}
@@ -2161,10 +2171,10 @@ function renderHmiScreenBrightnessWidget(entity) {
 ${headerYaml ? headerYaml : ""}
       - obj:
           id: ${getWidgetId(entity, 0)}_wrapper
-          x: 10
-          y: ${sliderTop}
-          width: ${sliderWidth}
-          height: ${sliderHeight}
+          x: ${layout.slider.x}
+          y: ${layout.slider.y}
+          width: ${layout.slider.width}
+          height: ${layout.slider.height}
           bg_color: 0x24323A
           bg_opa: 30%
           radius: 12

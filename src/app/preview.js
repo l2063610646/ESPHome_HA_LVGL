@@ -3,6 +3,7 @@ import {
   DEFAULT_BUTTON_BG_COLOR,
   DEFAULT_LABEL_PAD_LEFT,
   DEFAULT_SWITCH_PAD_RIGHT,
+  getHmiScreenBrightnessLayout,
   getMultiSwitchLayout,
   getMultiSwitchChannelTitle,
   getLightTileLayout,
@@ -521,10 +522,15 @@ function renderCoverPreview(entity) {
 function renderHmiScreenBrightnessPreview(entity) {
   const group = document.createElement("div");
   group.className = `hmi-brightness-group${entity.props.show_header === false ? " no-header" : ""}`;
+  const layout = getHmiScreenBrightnessLayout(entity.props.width, entity.props.height, entity.props.show_header !== false);
 
   if (entity.props.show_header !== false) {
     const header = document.createElement("div");
     header.className = "hmi-brightness-header";
+    header.style.left = `${layout.header.x}px`;
+    header.style.top = `${layout.header.y}px`;
+    header.style.width = `${layout.header.width}px`;
+    header.style.height = `${layout.header.height}px`;
 
     const title = document.createElement("span");
     title.className = "hmi-brightness-title";
@@ -540,6 +546,10 @@ function renderHmiScreenBrightnessPreview(entity) {
   const slider = document.createElement("div");
   slider.className = "hmi-brightness-slider";
   slider.style.backgroundColor = "rgba(36, 50, 58, 0.1)";
+  slider.style.left = `${layout.slider.x}px`;
+  slider.style.top = `${layout.slider.y}px`;
+  slider.style.width = `${layout.slider.width}px`;
+  slider.style.height = `${layout.slider.height}px`;
 
   const fill = document.createElement("div");
   fill.className = "hmi-brightness-slider-fill";

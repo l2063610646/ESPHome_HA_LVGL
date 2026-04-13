@@ -20,6 +20,7 @@ import {
   DEFAULT_THERMO_WIDTH,
   DEFAULT_WIDTH,
   ENTITY_CAPABILITIES,
+  getHmiScreenBrightnessMinHeight,
   HMI_SCREEN_BRIGHTNESS_STYLE_TILE,
   LIGHT_ICON_PATHS,
   LIGHT_TILE_ICON_POSITION_DEFAULT,
@@ -676,7 +677,7 @@ export function defaultHeightForType(type, style = SWITCH_STYLE_TOGGLE, props = 
     return DEFAULT_COVER_HEIGHT;
   }
   if (type === "hmi_screen_brightness") {
-    return DEFAULT_HMI_SCREEN_BRIGHTNESS_HEIGHT;
+    return Math.max(DEFAULT_HMI_SCREEN_BRIGHTNESS_HEIGHT, getHmiScreenBrightnessMinHeight(props.show_header !== false));
   }
   if (type === "light") {
     if (style === LIGHT_STYLE_TILE) return 120;
@@ -718,7 +719,7 @@ export function minHeightForType(type, style = SWITCH_STYLE_TOGGLE, props = {}) 
     return 120;
   }
   if (type === "hmi_screen_brightness") {
-    return DEFAULT_HMI_SCREEN_BRIGHTNESS_HEIGHT;
+    return getHmiScreenBrightnessMinHeight(props.show_header !== false);
   }
   if (type === "light") {
     if (style === LIGHT_STYLE_SLIDER) return 80 + getLightSliderExtraRowCount(props) * 30;
