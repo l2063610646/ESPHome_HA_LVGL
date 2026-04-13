@@ -19,7 +19,6 @@ import {
   DEFAULT_THERMO_HEIGHT,
   DEFAULT_THERMO_WIDTH,
   DEFAULT_WIDTH,
-  ENTITY_CAPABILITIES,
   getHmiScreenBrightnessMinHeight,
   HMI_SCREEN_BRIGHTNESS_STYLE_TILE,
   LIGHT_ICON_PATHS,
@@ -40,6 +39,34 @@ import {
   THERMO_HYGROMETER_STYLE_COMPACT,
   THERMO_ICON_PATHS,
 } from "./constants.js";
+import {
+  createEntityDraft,
+  defaultHeightForType,
+  defaultTitleForType,
+  defaultWidthForType,
+  getComponentDefinition,
+  getEntityCapability,
+  minHeightForType,
+  minWidthForType,
+  normalizeStyle,
+  normalizeType,
+  shouldRenderWidgetTitle,
+  usesTopAlignedTitle,
+} from "./components/registry.js";
+
+export {
+  createEntityDraft,
+  defaultHeightForType,
+  defaultTitleForType,
+  defaultWidthForType,
+  getEntityCapability,
+  minHeightForType,
+  minWidthForType,
+  normalizeStyle,
+  normalizeType,
+  shouldRenderWidgetTitle,
+  usesTopAlignedTitle,
+} from "./components/registry.js";
 
 export const initialSpec = {
   screens: [],
@@ -161,6 +188,7 @@ export function generateSpecYaml(state) {
 
 function appendEntityYaml(lines, entity, indent = "  ") {
   const propIndent = `${indent}  `;
+  const definition = getComponentDefinition(entity.type);
   if (entity.type === "hmi_screen_brightness") {
     lines.push(`${indent}- type: ${entity.type}`);
   } else if (entity.type === "switch" || entity.type === "light" || entity.type === "cover") {
@@ -186,42 +214,11 @@ function appendEntityYaml(lines, entity, indent = "  ") {
     lines.push(`${propIndent}  height: ${entity.props.height}`);
   }
   lines.push(`${propIndent}  title: ${quoteYaml(entity.props.title)}`);
-  if (entity.type === "hmi_screen_brightness") {
-    if (entity.props.show_header === false) {
-      lines.push(`${propIndent}  show_header: false`);
-    }
-    if (entity.props.slider_color) {
-      lines.push(`${propIndent}  slider_color: ${quoteYaml(entity.props.slider_color)}`);
-    }
-  }
-  if (entity.type === "thermo_hygrometer") {
-    if (normalizeIconSource(entity.props.temp_icon)) {
-      lines.push(`${propIndent}  temp_icon: ${quoteYaml(entity.props.temp_icon)}`);
-    }
-    if (normalizeIconSource(entity.props.hum_icon)) {
-      lines.push(`${propIndent}  hum_icon: ${quoteYaml(entity.props.hum_icon)}`);
-    }
-  }
-  if (entity.type === "light") {
-    if (normalizeIconSource(entity.props.icon)) {
-      lines.push(`${propIndent}  icon: ${quoteYaml(entity.props.icon)}`);
-    }
-    if (normalizeStyle(entity.type, entity.props.style) === LIGHT_STYLE_TILE || normalizeStyle(entity.type, entity.props.style) === LIGHT_STYLE_SLIDER) {
-      lines.push(`${propIndent}  tile_icon_position: ${quoteYaml(normalizeLightTileIconPosition(entity.props.tile_icon_position))}`);
-    }
-    if (entity.props.color_temp) {
-      lines.push(`${propIndent}  color_temp: true`);
-    }
-    if (entity.props.hue_360) {
-      lines.push(`${propIndent}  hue_360: true`);
-    }
-  }
-  if (entity.type === "multi_switch") {
-    for (let index = 0; index < 4; index += 1) {
-      lines.push(`${propIndent}  channel_${index + 1}_title: ${quoteYaml(getMultiSwitchChannelTitle(entity.props, index))}`);
-      lines.push(`${propIndent}  channel_${index + 1}_enabled: ${isMultiSwitchChannelEnabled(entity.props, index) ? "true" : "false"}`);
-    }
-  }
+  definition.appendSpecProps?.(lines, entity, propIndent, {
+    normalizeIconSource,
+    normalizeStyle,
+    quoteYaml,
+  });
   if (entity.props.active_bg_color) {
     lines.push(`${propIndent}  active_bg_color: ${quoteYaml(entity.props.active_bg_color)}`);
   }
@@ -578,154 +575,8 @@ export function normalizeEntityIds(entity, type) {
   );
 }
 
-export function normalizeType(value) {
-  if (value === "thermo_hygrometer") {
-    return "thermo_hygrometer";
-  }
-  if (value === "multi_switch") {
-    return "multi_switch";
-  }
-  if (value === "cover") {
-    return "cover";
-  }
-  if (value === "hmi_screen_brightness") {
-    return "hmi_screen_brightness";
-  }
-  if (value === "light") {
-    return "light";
-  }
-  return "switch";
-}
-
-export function normalizeStyle(type, value) {
-  if (type === "multi_switch") {
-    return value === MULTI_SWITCH_STYLE_LIST ? MULTI_SWITCH_STYLE_LIST : MULTI_SWITCH_STYLE_TILE;
-  }
-  if (type === "switch") {
-    return value === SWITCH_STYLE_BUTTON ? SWITCH_STYLE_BUTTON : SWITCH_STYLE_TOGGLE;
-  }
-  if (type === "cover") {
-    return COVER_STYLE_COMPACT;
-  }
-  if (type === "hmi_screen_brightness") {
-    return HMI_SCREEN_BRIGHTNESS_STYLE_TILE;
-  }
-  if (type === "light") {
-    if (value === LIGHT_STYLE_TILE) return LIGHT_STYLE_TILE;
-    if (value === LIGHT_STYLE_SLIDER) return LIGHT_STYLE_SLIDER;
-    return LIGHT_STYLE_ICON;
-  }
-  return THERMO_HYGROMETER_STYLE_COMPACT;
-}
-
-export function defaultTitleForType(type, entityids) {
-  if (type === "thermo_hygrometer") {
-    return "Temperature & Humidity";
-  }
-  if (type === "multi_switch") {
-    return "Switch Group";
-  }
-  if (type === "cover") {
-    return deriveTitle(entityids[0]);
-  }
-  if (type === "hmi_screen_brightness") {
-    return "HMI Screen";
-  }
-  if (type === "light") {
-    return deriveTitle(entityids[0]);
-  }
-  return deriveTitle(entityids[0]);
-}
-
 export function defaultTitleForEntity(entity) {
   return defaultTitleForType(entity.type, entity.entityids);
-}
-
-export function defaultWidthForType(type, style) {
-  if (type === "thermo_hygrometer") {
-    return DEFAULT_THERMO_WIDTH;
-  }
-  if (type === "multi_switch") {
-    return DEFAULT_MULTI_SWITCH_WIDTH;
-  }
-  if (type === "cover") {
-    return DEFAULT_COVER_WIDTH;
-  }
-  if (type === "hmi_screen_brightness") {
-    return DEFAULT_HMI_SCREEN_BRIGHTNESS_WIDTH;
-  }
-  if (type === "light") {
-    if (style === LIGHT_STYLE_TILE) return 120;
-    if (style === LIGHT_STYLE_SLIDER) return 220;
-    return DEFAULT_LIGHT_WIDTH;
-  }
-  return DEFAULT_WIDTH;
-}
-
-export function defaultHeightForType(type, style = SWITCH_STYLE_TOGGLE, props = {}) {
-  if (type === "thermo_hygrometer") {
-    return DEFAULT_THERMO_HEIGHT;
-  }
-  if (type === "multi_switch") {
-    if (style === MULTI_SWITCH_STYLE_LIST) {
-      const enabledCount = getEnabledSwitchIndices(entity).length;
-      return Math.max(enabledCount * 44 + 48, DEFAULT_MULTI_SWITCH_HEIGHT);
-    }
-    return DEFAULT_MULTI_SWITCH_HEIGHT;
-  }
-  if (type === "cover") {
-    return DEFAULT_COVER_HEIGHT;
-  }
-  if (type === "hmi_screen_brightness") {
-    return Math.max(DEFAULT_HMI_SCREEN_BRIGHTNESS_HEIGHT, getHmiScreenBrightnessMinHeight(props.show_header !== false));
-  }
-  if (type === "light") {
-    if (style === LIGHT_STYLE_TILE) return 120;
-    if (style === LIGHT_STYLE_SLIDER) return 112 + getLightSliderExtraRowCount(props) * 40;
-    return DEFAULT_LIGHT_HEIGHT;
-  }
-  return style === SWITCH_STYLE_BUTTON ? SWITCH_BUTTON_STYLE_HEIGHT : DEFAULT_HEIGHT;
-}
-
-export function minWidthForType(type, style) {
-  if (type === "thermo_hygrometer") {
-    return 180;
-  }
-  if (type === "multi_switch") {
-    return 180;
-  }
-  if (type === "cover") {
-    return 180;
-  }
-  if (type === "hmi_screen_brightness") {
-    return 180;
-  }
-  if (type === "light") {
-    if (style === LIGHT_STYLE_TILE) return 80;
-    if (style === LIGHT_STYLE_SLIDER) return 180;
-    return 48;
-  }
-  return 150;
-}
-
-export function minHeightForType(type, style = SWITCH_STYLE_TOGGLE, props = {}) {
-  if (type === "thermo_hygrometer") {
-    return DEFAULT_THERMO_HEIGHT;
-  }
-  if (type === "multi_switch") {
-    return 104;
-  }
-  if (type === "cover") {
-    return 120;
-  }
-  if (type === "hmi_screen_brightness") {
-    return getHmiScreenBrightnessMinHeight(props.show_header !== false);
-  }
-  if (type === "light") {
-    if (style === LIGHT_STYLE_SLIDER) return 80 + getLightSliderExtraRowCount(props) * 30;
-    return 48;
-  }
-  return style === SWITCH_STYLE_BUTTON ? SWITCH_BUTTON_STYLE_HEIGHT : 56;
 }
 
 export function normalizeOptionalColor(value) {
@@ -795,32 +646,12 @@ export function normalizeIconSource(value) {
   return text;
 }
 
-export function usesTopAlignedTitle(entity) {
-  return (entity.type === "switch" && entity.props.style === SWITCH_STYLE_BUTTON) || entity.type === "multi_switch";
-}
-
-export function shouldRenderWidgetTitle(entity) {
-  return entity.type !== "thermo_hygrometer" && entity.type !== "light" && entity.type !== "cover" && entity.type !== "hmi_screen_brightness";
-}
-
 export function hasFixedHeight(type) {
   return false;
 }
 
 export function supportsHeightResize(type) {
   return !hasFixedHeight(type);
-}
-
-export function deriveTitle(entityId) {
-  return entityId.split(".").slice(1).join(".") || entityId;
-}
-
-export function getEntityCapability(type) {
-  return ENTITY_CAPABILITIES[type] || ENTITY_CAPABILITIES.switch;
-}
-
-export function createEntityDraft(type, index) {
-  return getEntityCapability(type).createEntity(index);
 }
 
 export function clamp(value, min, max) {

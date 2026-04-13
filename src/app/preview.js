@@ -26,6 +26,10 @@ import {
   THERMO_VALUE_BOX_HEIGHT,
 } from "./constants.js";
 import {
+  getComponentDefinition,
+  renderComponentPreview,
+} from "./components/registry.js";
+import {
   getEntityCapability,
   normalizeIconSource,
   normalizeStyle,
@@ -91,19 +95,7 @@ export function renderCanvas(state, elements, callbacks) {
       widget.append(title);
     }
 
-    if (entity.type === "switch") {
-      widget.append(renderSingleSwitchPreview(entity));
-    } else if (entity.type === "multi_switch") {
-      widget.append(entity.props.style === MULTI_SWITCH_STYLE_LIST ? renderMultiSwitchListPreview(entity) : renderMultiSwitchPreview(entity));
-    } else if (entity.type === "thermo_hygrometer") {
-      widget.append(renderThermoHygrometerPreview(entity));
-    } else if (entity.type === "cover") {
-      widget.append(renderCoverPreview(entity));
-    } else if (entity.type === "hmi_screen_brightness") {
-      widget.append(renderHmiScreenBrightnessPreview(entity));
-    } else {
-      widget.append(renderLightPreview(entity));
-    }
+    widget.append(renderComponentPreview(entity));
 
     const bounds = document.createElement("span");
     bounds.className = "widget-bounds";
@@ -741,7 +733,7 @@ function applyTilePlacement(node, placement) {
 }
 
 function rebuildStyleOptions(fieldStyle, type) {
-  const options = getEntityCapability(type).styleOptions;
+  const options = getComponentDefinition(type).styleOptions;
   fieldStyle.replaceChildren();
   options.forEach((option) => {
     const node = document.createElement("option");
