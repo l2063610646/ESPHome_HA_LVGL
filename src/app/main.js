@@ -59,8 +59,6 @@ const elements = {
   copyFinalBtn: document.getElementById("copy-final-btn"),
   finalYamlIo: document.getElementById("final-yaml-io"),
   buildStatusNode: document.getElementById("build-status"),
-  duplicateBtn: document.getElementById("duplicate-btn"),
-  deleteBtn: document.getElementById("delete-btn"),
   template: document.getElementById("entity-item-template"),
   boardSelect: document.getElementById("board-select"),
   rotationSelect: document.getElementById("rotation-select"),
@@ -73,6 +71,10 @@ const elements = {
   previewDirection: document.getElementById("preview-direction"),
   screenBgColorInput: document.getElementById("screen-bg-color"),
   screenPalette: document.getElementById("screen-palette"),
+  configTabBoard: document.getElementById("config-tab-board"),
+  configTabWifi: document.getElementById("config-tab-wifi"),
+  configPanelBoard: document.getElementById("config-panel-board"),
+  configPanelWifi: document.getElementById("config-panel-wifi"),
   deviceNameInput: document.getElementById("device-name"),
   deviceNameHelp: document.getElementById("device-name-help"),
   friendlyNameInput: document.getElementById("friendly-name"),
@@ -129,6 +131,32 @@ const elements = {
   screenBgColorHex: document.getElementById("screen-bg-color-hex"),
   screenBgColorCopy: document.getElementById("screen-bg-color-copy"),
 };
+
+const configTabs = [
+  { key: "board", button: elements.configTabBoard, panel: elements.configPanelBoard },
+  { key: "wifi", button: elements.configTabWifi, panel: elements.configPanelWifi },
+];
+
+function setActiveConfigTab(targetKey) {
+  configTabs.forEach(({ key, button, panel }) => {
+    const isActive = key === targetKey;
+    if (!button || !panel) {
+      return;
+    }
+    button.classList.toggle("active", isActive);
+    button.setAttribute("aria-selected", String(isActive));
+    panel.classList.toggle("hidden", !isActive);
+    panel.hidden = !isActive;
+  });
+}
+
+configTabs.forEach(({ key, button }) => {
+  button?.addEventListener("click", () => {
+    setActiveConfigTab(key);
+  });
+});
+
+setActiveConfigTab("board");
 
 elements.addEntityBtn.addEventListener("click", () => {
   const nextIndex = state.entities.length + 1;
@@ -257,34 +285,6 @@ elements.copyFinalBtn.addEventListener("click", async () => {
   } catch (_error) {
     setStatus("Clipboard unavailable. Copy from the text area.", true);
   }
-});
-
-elements.duplicateBtn.addEventListener("click", () => {
-  const entity = getSelectedEntity();
-  if (!entity) {
-    return;
-  }
-  const clone = structuredClone(entity);
-  clone.id = `id-${Math.random().toString(36).slice(2, 11)}`;
-  clone.entityids = clone.entityids.map((entityId, index) =>
-    index === 0 ? `${entityId}_copy` : `${entityId}_copy_${index + 1}`
-  );
-  clone.props.x = clamp(entity.props.x + 18, 0, state.canvasWidth - clone.props.width);
-  clone.props.y = clamp(entity.props.y + 18, 0, state.canvasHeight - clone.props.height);
-  clone.props.title = `${entity.props.title} Copy`;
-  state.entities.push(clone);
-  state.selectedId = clone.id;
-  syncAll("Duplicated widget");
-});
-
-elements.deleteBtn.addEventListener("click", () => {
-  if (!state.selectedId) {
-    return;
-  }
-  state.entities = state.entities.filter((entity) => entity.id !== state.selectedId);
-  getCurrentScreen().entities = state.entities;
-  state.selectedId = state.entities[0]?.id ?? null;
-  syncAll("Deleted widget");
 });
 
 [
@@ -736,9 +736,17 @@ function renderApp() {
     },
   });
 
-  renderEntityList(state, elements.entityList, elements.template, (entityId, message) => {
-    state.selectedId = entityId;
-    syncAll(message);
+  renderEntityList(state, elements.entityList, elements.template, {
+    onSelect(entityId, message) {
+      state.selectedId = entityId;
+      syncAll(message);
+    },
+    onDuplicate(entityId) {
+      duplicateEntityById(entityId);
+    },
+    onDelete(entityId) {
+      deleteEntityById(entityId);
+    },
   });
 
   renderScreenTabs(
@@ -780,6 +788,34 @@ function syncScreenControls() {
 
 function getSelectedEntity() {
   return state.entities.find((entity) => entity.id === state.selectedId) || null;
+}
+
+function duplicateEntityById(entityId) {
+  const entity = state.entities.find((item) => item.id === entityId);
+  if (!entity) {
+    return;
+  }
+  const clone = structuredClone(entity);
+  clone.id = `id-${Math.random().toString(36).slice(2, 11)}`;
+  clone.entityids = clone.entityids.map((currentEntityId, index) =>
+    index === 0 ? `${currentEntityId}_copy` : `${currentEntityId}_copy_${index + 1}`
+  );
+  clone.props.x = clamp(entity.props.x + 18, 0, state.canvasWidth - clone.props.width);
+  clone.props.y = clamp(entity.props.y + 18, 0, state.canvasHeight - clone.props.height);
+  clone.props.title = `${entity.props.title} Copy`;
+  state.entities.push(clone);
+  state.selectedId = clone.id;
+  syncAll("Duplicated widget");
+}
+
+function deleteEntityById(entityId) {
+  if (!state.entities.some((entity) => entity.id === entityId)) {
+    return;
+  }
+  state.entities = state.entities.filter((entity) => entity.id !== entityId);
+  getCurrentScreen().entities = state.entities;
+  state.selectedId = state.entities[0]?.id ?? null;
+  syncAll("Deleted widget");
 }
 
 function setStatus(message, isError = false) {

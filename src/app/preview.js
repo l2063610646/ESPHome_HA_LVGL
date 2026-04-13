@@ -124,14 +124,34 @@ export function renderCanvas(state, elements, callbacks) {
   });
 }
 
-export function renderEntityList(state, entityList, template, onSelect) {
+export function renderEntityList(state, entityList, template, callbacks) {
+  const { onSelect, onDuplicate, onDelete } = callbacks;
   entityList.replaceChildren();
   state.entities.forEach((entity, index) => {
     const item = template.content.firstElementChild.cloneNode(true);
+    const titleNode = item.querySelector(".entity-item-title");
+    const metaNode = item.querySelector(".entity-item-meta");
+    const duplicateBtn = item.querySelector(".entity-duplicate-btn");
+    const deleteBtn = item.querySelector(".entity-delete-btn");
     item.classList.toggle("active", entity.id === state.selectedId);
     const idSummary = entity.entityids.length ? entity.entityids.join(" / ") : "local device control";
-    item.innerHTML = `<strong>${index + 1}. ${entity.props.title}</strong><span>${entity.type} · ${idSummary}</span>`;
+    titleNode.textContent = `${index + 1}. ${entity.props.title}`;
+    metaNode.textContent = `${entity.type} · ${idSummary}`;
     item.addEventListener("click", () => onSelect(entity.id, "Entity selected"));
+    item.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        onSelect(entity.id, "Entity selected");
+      }
+    });
+    duplicateBtn?.addEventListener("click", (event) => {
+      event.stopPropagation();
+      onDuplicate(entity.id);
+    });
+    deleteBtn?.addEventListener("click", (event) => {
+      event.stopPropagation();
+      onDelete(entity.id);
+    });
     entityList.append(item);
   });
 }
