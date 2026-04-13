@@ -97,8 +97,14 @@ For UI styling work, treat the generated YAML and intended LVGL result as the so
 - Keep the preview close in card shape, spacing, borders, and control styling.
 - Avoid strong gradients, heavy shadows, glass effects, or layered browser-only styling that LVGL cannot represent closely.
 - If a visual choice cannot be represented reasonably in LVGL, simplify the preview.
+- Use the actual widget geometry from the editor state whenever possible.
+  If the user drags or resizes a widget, treat the current `x`, `y`, `width`, and `height` as the source geometry for both preview and generated YAML.
+  Do not invent a second independent layout model if the current editor geometry can be reused.
+- For interactive controls such as sliders, the minimum size rule should apply to the internal control area first.
+  Do not incorrectly convert an internal slider minimum height into an unrelated outer card minimum unless padding/header math requires it.
+- For widgets with both preview HTML and generated LVGL layouts, prefer sharing one layout calculation between preview and YAML generation so the same numbers drive both outputs.
 
-The preview does not need pixel-perfect parity, but it must not materially overpromise the device result.
+The preview must be treated as strict WYSIWYG for normal editor work: what the user sees in HTML should be what appears on the flashed HMI screen, including position, size, spacing, and internal control geometry.
 
 ## Style Variant Rule
 
@@ -138,6 +144,22 @@ When implementing a new widget style or layout variant:
 5. Update inspector controls in `index.html` if needed.
 6. Update styling in `assets/css/styles.css`.
 7. Update example spec or docs when helpful.
+
+## HMI Brightness Widget Notes
+
+When working on `type: hmi_screen_brightness`, follow these rules:
+
+- `header` means the top row containing the HMI title on the left and the current brightness on the right.
+- If `show_header` is enabled, the title and brightness must render on the same row.
+- The title must be visually left-aligned.
+- If `show_header` is disabled, the slider must keep the configured top/bottom padding and must not leave a reserved header gap.
+- Size limits should be derived from the slider's minimum drawable size, not from an arbitrary outer card size.
+  Example: if the slider minimum height is `25`, compute the widget minimum height from `padding + optional header + optional header gap + slider minimum height + padding`.
+- Resizing the widget should primarily change the slider geometry.
+  Do not let resizing accidentally change the perceived header-to-slider spacing instead of the slider size itself.
+- If Home Assistant changes the backlight state externally, the widget must update its displayed percentage and slider position/fill accordingly.
+- Avoid stale-value feedback loops.
+  If a slider controls backlight brightness, make sure the displayed percentage reflects the latest state rather than the previous state.
 
 ## Expected Workflow
 
