@@ -156,6 +156,47 @@ export const multiSwitchComponent = {
   shouldRenderWidgetTitle() {
     return true;
   },
+  getInspectorState() {
+    return {
+      showEntityId: false,
+      showEntityId2: false,
+      showStyle: true,
+      showMultiSwitch: true,
+      showThermoIcons: false,
+      showHmiBrightness: false,
+      showLightIcon: false,
+      showLightTilePosition: false,
+      showLightSliders: false,
+      showActiveColor: true,
+    };
+  },
+  populateInspector(entity, elements) {
+    elements.multiSwitchEnabledInputs?.forEach((input, index) => {
+      input.checked = isMultiSwitchChannelEnabled(entity.props, index);
+    });
+    elements.multiSwitchEntityInputs?.forEach((input, index) => {
+      input.value = entity.entityids[index] || "";
+    });
+    elements.multiSwitchTitleInputs?.forEach((input, index) => {
+      input.value = getMultiSwitchChannelTitle(entity.props, index);
+    });
+  },
+  applyInspectorChanges(entity, elements) {
+    elements.multiSwitchEntityInputs.forEach((input, index) => {
+      const trimmedEntityId = input.value.trim();
+      if (trimmedEntityId) {
+        entity.entityids[index] = trimmedEntityId;
+      }
+      entity.props[`channel_${index + 1}_title`] = elements.multiSwitchTitleInputs[index].value;
+      entity.props[`channel_${index + 1}_enabled`] = elements.multiSwitchEnabledInputs[index].checked;
+    });
+  },
+  applyInspectorCommit(entity, elements) {
+    elements.multiSwitchEnabledInputs.forEach((input, index) => {
+      entity.props[`channel_${index + 1}_title`] = elements.multiSwitchTitleInputs[index].value.trim() || `Switch ${index + 1}`;
+      entity.props[`channel_${index + 1}_enabled`] = input.checked;
+    });
+  },
   appendSpecProps(lines, entity, propIndent, { quoteYaml }) {
     for (let index = 0; index < 4; index += 1) {
       lines.push(`${propIndent}  channel_${index + 1}_title: ${quoteYaml(getMultiSwitchChannelTitle(entity.props, index))}`);

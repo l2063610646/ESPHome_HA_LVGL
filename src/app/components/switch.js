@@ -87,6 +87,23 @@ export const switchComponent = {
   shouldRenderWidgetTitle(entity) {
     return entity.props.style !== undefined;
   },
+  getInspectorState(entity) {
+    return {
+      showEntityId: true,
+      showEntityId2: false,
+      showStyle: true,
+      showMultiSwitch: false,
+      showThermoIcons: false,
+      showHmiBrightness: false,
+      showLightIcon: false,
+      showLightTilePosition: false,
+      showLightSliders: false,
+      showActiveColor: entity.props.style === SWITCH_STYLE_BUTTON,
+    };
+  },
+  populateInspector() {},
+  applyInspectorChanges() {},
+  applyInspectorCommit() {},
   appendSpecProps() {},
   renderPreview(entity) {
     return entity.props.style === SWITCH_STYLE_BUTTON ? renderButtonPreview(entity) : renderTogglePreview();

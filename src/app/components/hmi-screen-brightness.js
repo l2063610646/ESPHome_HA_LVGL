@@ -53,6 +53,37 @@ export const hmiScreenBrightnessComponent = {
   shouldRenderWidgetTitle() {
     return false;
   },
+  getInspectorState() {
+    return {
+      showEntityId: false,
+      showEntityId2: false,
+      showStyle: true,
+      showMultiSwitch: false,
+      showThermoIcons: false,
+      showHmiBrightness: true,
+      showLightIcon: false,
+      showLightTilePosition: false,
+      showLightSliders: false,
+      showActiveColor: false,
+    };
+  },
+  populateInspector(entity, elements, utils) {
+    elements.fieldHmiShowHeader.checked = entity.props.show_header !== false;
+    elements.fieldHmiSliderColor.value = utils.yamlColorToHtml(entity.props.slider_color || "#FDBB13");
+    if (elements.fieldHmiSliderColorHex) {
+      elements.fieldHmiSliderColorHex.textContent = elements.fieldHmiSliderColor.value.toUpperCase();
+    }
+  },
+  applyInspectorChanges(entity, elements, utils) {
+    entity.props.show_header = elements.fieldHmiShowHeader.checked;
+    entity.props.slider_color = utils.htmlColorToYaml(elements.fieldHmiSliderColor.value);
+    utils.updateColorHexLabel(elements.fieldHmiSliderColor, elements.fieldHmiSliderColorHex);
+  },
+  applyInspectorCommit(entity, elements, utils) {
+    entity.props.show_header = elements.fieldHmiShowHeader.checked;
+    entity.props.slider_color = utils.htmlColorToYaml(elements.fieldHmiSliderColor.value);
+    utils.updateColorHexLabel(elements.fieldHmiSliderColor, elements.fieldHmiSliderColorHex);
+  },
   appendSpecProps(lines, entity, propIndent, { quoteYaml }) {
     if (entity.props.show_header === false) {
       lines.push(`${propIndent}  show_header: false`);

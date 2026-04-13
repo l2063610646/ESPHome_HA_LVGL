@@ -13,6 +13,8 @@ import {
   updateThermoIconInspectorPreview,
 } from "./preview.js";
 import {
+  applyComponentInspectorChanges,
+  applyComponentInspectorCommit,
   clamp,
   clampNumber,
   createEntityDraft,
@@ -539,42 +541,14 @@ function handleInspectorChange() {
   if (capability.entityFields.length > 0 && trimmedEntityId) {
     entity.entityids[0] = trimmedEntityId;
   }
-  if (entity.type === "thermo_hygrometer" && capability.entityFields.length > 1) {
-    const trimmedEntityId2 = elements.fieldEntityId2.value.trim();
-    if (trimmedEntityId2) {
-      entity.entityids[1] = trimmedEntityId2;
-    }
-  }
-  if (entity.type === "multi_switch") {
-    elements.multiSwitchEntityInputs.forEach((input, index) => {
-      const trimmedEntityId = input.value.trim();
-      if (trimmedEntityId) {
-        entity.entityids[index] = trimmedEntityId;
-      }
-      entity.props[`channel_${index + 1}_title`] = elements.multiSwitchTitleInputs[index].value;
-      entity.props[`channel_${index + 1}_enabled`] = elements.multiSwitchEnabledInputs[index].checked;
-    });
-  }
 
   entity.props.title = elements.fieldTitle.value;
-  if (entity.type === "thermo_hygrometer") {
-    entity.props.temp_icon = normalizeIconSource(elements.fieldTempIcon.value);
-    entity.props.hum_icon = normalizeIconSource(elements.fieldHumIcon.value);
-  }
-  if (entity.type === "hmi_screen_brightness") {
-    entity.props.show_header = elements.fieldHmiShowHeader.checked;
-    entity.props.slider_color = htmlColorToYaml(elements.fieldHmiSliderColor.value);
-    updateColorHexLabel(elements.fieldHmiSliderColor, elements.fieldHmiSliderColorHex);
-  }
-  if (entity.type === "light") {
-    entity.props.icon = normalizeIconSource(elements.fieldLightIcon.value);
-    entity.props.tile_icon_position = elements.fieldLightTileIconPosition.value.trim() || entity.props.tile_icon_position;
-    entity.props.color_temp = elements.fieldColorTemp.checked;
-    entity.props.hue_360 = elements.fieldHue360.checked;
-    entity.props.preview_color_temp = parseInt(elements.fieldLightPreviewCt.value, 10);
-    entity.props.preview_hue = parseInt(elements.fieldLightPreviewHue.value, 10);
-    entity.props.height = Math.max(entity.props.height, minHeightForType(entity.type, entity.props.style, entity.props));
-  }
+  applyComponentInspectorChanges(entity, elements, {
+    htmlColorToYaml,
+    minHeightForType,
+    normalizeIconSource,
+    updateColorHexLabel,
+  });
   if (!supportsHeightResize(entity.type, entity.props.style)) {
     entity.props.height = minHeightForType(entity.type, entity.props.style, entity.props);
   }
@@ -630,27 +604,11 @@ function handleInspectorCommit() {
   });
   entity.props.style = normalizeStyle(entity.type, elements.fieldStyle.value || entity.props.style);
   entity.props.title = elements.fieldTitle.value.trim() || defaultTitleForEntity(entity);
-  if (entity.type === "multi_switch") {
-    elements.multiSwitchEnabledInputs.forEach((input, index) => {
-      entity.props[`channel_${index + 1}_title`] = elements.multiSwitchTitleInputs[index].value.trim() || `Switch ${index + 1}`;
-      entity.props[`channel_${index + 1}_enabled`] = input.checked;
-    });
-  }
-  if (entity.type === "thermo_hygrometer") {
-    entity.props.temp_icon = normalizeIconSource(elements.fieldTempIcon.value);
-    entity.props.hum_icon = normalizeIconSource(elements.fieldHumIcon.value);
-  }
-  if (entity.type === "hmi_screen_brightness") {
-    entity.props.show_header = elements.fieldHmiShowHeader.checked;
-    entity.props.slider_color = htmlColorToYaml(elements.fieldHmiSliderColor.value);
-    updateColorHexLabel(elements.fieldHmiSliderColor, elements.fieldHmiSliderColorHex);
-  }
-  if (entity.type === "light") {
-    entity.props.color_temp = elements.fieldColorTemp.checked;
-    entity.props.hue_360 = elements.fieldHue360.checked;
-    entity.props.preview_color_temp = parseInt(elements.fieldLightPreviewCt.value, 10);
-    entity.props.preview_hue = parseInt(elements.fieldLightPreviewHue.value, 10);
-  }
+  applyComponentInspectorCommit(entity, elements, {
+    htmlColorToYaml,
+    normalizeIconSource,
+    updateColorHexLabel,
+  });
   if (elements.fieldActiveBgColor) {
     entity.props.active_bg_color = htmlColorToYaml(elements.fieldActiveBgColor.value);
     updateColorHexLabel(elements.fieldActiveBgColor, elements.fieldActiveBgColorHex);

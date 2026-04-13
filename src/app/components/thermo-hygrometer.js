@@ -55,6 +55,36 @@ export const thermoHygrometerComponent = {
   shouldRenderWidgetTitle() {
     return false;
   },
+  getInspectorState() {
+    return {
+      showEntityId: true,
+      showEntityId2: true,
+      showStyle: true,
+      showMultiSwitch: false,
+      showThermoIcons: true,
+      showHmiBrightness: false,
+      showLightIcon: false,
+      showLightTilePosition: false,
+      showLightSliders: false,
+      showActiveColor: false,
+    };
+  },
+  populateInspector(entity, elements) {
+    elements.fieldTempIcon.value = entity.props.temp_icon ?? "";
+    elements.fieldHumIcon.value = entity.props.hum_icon ?? "";
+  },
+  applyInspectorChanges(entity, elements, utils) {
+    const trimmedEntityId2 = elements.fieldEntityId2.value.trim();
+    if (trimmedEntityId2) {
+      entity.entityids[1] = trimmedEntityId2;
+    }
+    entity.props.temp_icon = utils.normalizeIconSource(elements.fieldTempIcon.value);
+    entity.props.hum_icon = utils.normalizeIconSource(elements.fieldHumIcon.value);
+  },
+  applyInspectorCommit(entity, elements, utils) {
+    entity.props.temp_icon = utils.normalizeIconSource(elements.fieldTempIcon.value);
+    entity.props.hum_icon = utils.normalizeIconSource(elements.fieldHumIcon.value);
+  },
   appendSpecProps(lines, entity, propIndent, { normalizeIconSource, quoteYaml }) {
     if (normalizeIconSource(entity.props.temp_icon)) {
       lines.push(`${propIndent}  temp_icon: ${quoteYaml(entity.props.temp_icon)}`);

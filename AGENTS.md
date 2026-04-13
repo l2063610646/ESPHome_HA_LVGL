@@ -25,15 +25,27 @@ The old Python build pipeline is not part of the normal workflow anymore.
 - `src/app.js`
   Browser entry module. It loads the editor app.
 - `src/app/main.js`
-  Main UI wiring, event handling, local cache restore/save, and overall editor coordination.
+  Main UI wiring, event handling, local cache restore/save, drag/resize interactions, and overall editor coordination.
 - `src/app/spec.js`
   State initialization, spec parsing/export, normalization, and shared data-model helpers.
 - `src/app/preview.js`
-  Canvas preview rendering, entity list rendering, inspector rendering, and preview helpers.
+  Canvas preview rendering, entity list rendering, inspector rendering, and preview orchestration.
 - `src/app/esphome.js`
-  Board templates and final ESPHome YAML generation.
+  Board templates, shared ESPHome helpers, and final ESPHome YAML orchestration.
 - `src/app/constants.js`
-  Board metadata, widget constants, and entity capability definitions.
+  Board metadata, layout constants, and shared widget constants.
+- `src/app/components/registry.js`
+  Central component registry. Component lookup should go here instead of adding new type-switch chains in main modules.
+- `src/app/components/*.js`
+  One file per widget/component type. These modules own component metadata, style normalization, defaults, preview rendering, spec-property extensions, and Inspector-specific behavior.
+- `src/app/components/esphome/registry.js`
+  ESPHome widget renderer registry.
+- `src/app/components/esphome/*.js`
+  One file per widget/component type for final LVGL/ESPHome widget rendering.
+- `src/app/components/common.js`
+  Small shared helpers for component modules.
+- `src/app/components/preview-helpers.js`
+  Shared preview-side icon/color helpers used by component modules.
 - `assets/css/styles.css`
   App styling and preview styling.
 - `mdi:thermometer`
@@ -79,6 +91,39 @@ Work from top to bottom.
    `index.html` and `assets/css/styles.css`.
 
 Do not add a separate generator implementation unless the user explicitly asks for one.
+
+## Component Architecture Rule
+
+The project has been refactored to be component-first.
+
+- Do not re-introduce large `if (entity.type === ...)` trees in `spec.js`, `preview.js`, or `esphome.js` for behavior that belongs to an individual widget.
+- Prefer adding or updating behavior in:
+  - `src/app/components/<component>.js`
+  - `src/app/components/esphome/<component>.js`
+- Use `src/app/components/registry.js` for:
+  - type lookup
+  - style normalization
+  - default size/title helpers
+  - Inspector behavior hooks
+  - preview renderer dispatch
+- Use `src/app/components/esphome/registry.js` for final LVGL/ESPHome widget renderer dispatch.
+- `spec.js`, `preview.js`, and `esphome.js` should act as orchestration layers and shared-helper homes, not as the primary place for per-widget behavior.
+
+Current component split:
+
+- `switch`
+- `multi_switch`
+- `thermo_hygrometer`
+- `cover`
+- `hmi_screen_brightness`
+- `light`
+
+For a new widget type, create both:
+
+1. `src/app/components/<new-type>.js`
+2. `src/app/components/esphome/<new-type>.js`
+
+Then register them in both registries.
 
 ## Safe Change Zones
 
@@ -138,12 +183,21 @@ Do not make silent hardware decisions outside those explicit board template sect
 When implementing a new widget style or layout variant:
 
 1. Update the spec contract first.
-2. Update parsing and normalization in `src/app/spec.js`.
-3. Update final YAML generation in `src/app/esphome.js`.
-4. Update preview rendering in `src/app/preview.js`.
+2. Update parsing and normalization in `src/app/spec.js` and the relevant `src/app/components/*.js`.
+3. Update final YAML generation in the relevant `src/app/components/esphome/*.js` and any required shared helper in `src/app/esphome.js`.
+4. Update preview rendering in the relevant `src/app/components/*.js` and any required shared helper in `src/app/preview.js`.
 5. Update inspector controls in `index.html` if needed.
-6. Update styling in `assets/css/styles.css`.
-7. Update example spec or docs when helpful.
+6. Update component Inspector behavior in the relevant `src/app/components/*.js` if needed.
+7. Update styling in `assets/css/styles.css`.
+8. Update documentation and example spec data when helpful.
+
+When implementing a new widget type:
+
+1. Add the component module in `src/app/components/`.
+2. Add the ESPHome renderer module in `src/app/components/esphome/`.
+3. Register both in the matching registries.
+4. Update `index.html` only for truly shared Inspector UI controls.
+5. Keep per-component Inspector visibility/field-sync logic in the component module, not in `main.js` or `preview.js`.
 
 ## HMI Brightness Widget Notes
 
@@ -166,9 +220,10 @@ When working on `type: hmi_screen_brightness`, follow these rules:
 For most work:
 
 1. Read the current editor behavior in `src/app/main.js` and the relevant modules in `src/app/`.
-2. Update the spec contract and preview together.
-3. Update final YAML generation in the same task.
-4. Keep the preview and generated output aligned.
+2. Find the relevant component module under `src/app/components/` and `src/app/components/esphome/`.
+3. Update the spec contract and preview together.
+4. Update final YAML generation in the same task.
+5. Keep the preview and generated output aligned.
 
 ## Validation Standard
 

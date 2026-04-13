@@ -26,7 +26,9 @@ import {
   THERMO_VALUE_BOX_HEIGHT,
 } from "./constants.js";
 import {
+  getInspectorState,
   getComponentDefinition,
+  populateComponentInspector,
   renderComponentPreview,
 } from "./components/registry.js";
 import {
@@ -211,17 +213,16 @@ export function renderInspector(entity, elements) {
   }
 
   const capability = getEntityCapability(entity.type);
-  const hasSecondEntity = capability.entityFields.length > 1 && entity.type !== "multi_switch";
-  fieldEntityIdRow.classList.toggle("hidden", entity.type === "multi_switch" || capability.entityFields.length === 0);
-  dualFields.classList.toggle("hidden", !hasSecondEntity);
-  const showStyle = capability.styleOptions && capability.styleOptions.length > 0;
-  switchStyleFields.classList.toggle("hidden", !showStyle);
-  multiSwitchFields.classList.toggle("hidden", entity.type !== "multi_switch");
-  thermoIconFields.classList.toggle("hidden", entity.type !== "thermo_hygrometer");
-  hmiBrightnessFields.classList.toggle("hidden", entity.type !== "hmi_screen_brightness");
-  lightIconFields.classList.toggle("hidden", entity.type !== "light");
-  lightTilePositionFields.classList.toggle("hidden", !(entity.type === "light" && (entity.props.style === LIGHT_STYLE_TILE || entity.props.style === LIGHT_STYLE_SLIDER)));
-  lightSliderFields.classList.toggle("hidden", !(entity.type === "light" && entity.props.style === LIGHT_STYLE_SLIDER));
+  const inspectorState = getInspectorState(entity);
+  fieldEntityIdRow.classList.toggle("hidden", !inspectorState.showEntityId);
+  dualFields.classList.toggle("hidden", !inspectorState.showEntityId2);
+  switchStyleFields.classList.toggle("hidden", !inspectorState.showStyle);
+  multiSwitchFields.classList.toggle("hidden", !inspectorState.showMultiSwitch);
+  thermoIconFields.classList.toggle("hidden", !inspectorState.showThermoIcons);
+  hmiBrightnessFields.classList.toggle("hidden", !inspectorState.showHmiBrightness);
+  lightIconFields.classList.toggle("hidden", !inspectorState.showLightIcon);
+  lightTilePositionFields.classList.toggle("hidden", !inspectorState.showLightTilePosition);
+  lightSliderFields.classList.toggle("hidden", !inspectorState.showLightSliders);
   rebuildStyleOptions(fieldStyle, entity.type);
   rebuildLightTilePositionOptions(fieldLightTileIconPosition);
   fieldType.value = entity.type;
@@ -236,20 +237,7 @@ export function renderInspector(entity, elements) {
   fieldWidth.value = entity.props.width;
   fieldHeight.value = entity.props.height;
   fieldHeight.disabled = !supportsHeightResize(entity.type, entity.props.style);
-  fieldTempIcon.value = entity.props.temp_icon ?? "";
-  fieldHumIcon.value = entity.props.hum_icon ?? "";
-  fieldLightIcon.value = entity.props.icon ?? "";
-  fieldLightTileIconPosition.value = entity.props.tile_icon_position ?? LIGHT_TILE_ICON_POSITION_DEFAULT;
-  fieldHmiShowHeader.checked = entity.props.show_header !== false;
-  fieldHmiSliderColor.value = yamlColorToHtml(entity.props.slider_color || "#FDBB13");
-  if (elements.fieldHmiSliderColorHex) {
-    elements.fieldHmiSliderColorHex.textContent = fieldHmiSliderColor.value.toUpperCase();
-  }
-  fieldColorTemp.checked = entity.props.color_temp ?? false;
-  elements.fieldHue360.checked = entity.props.hue_360 ?? false;
-  multiSwitchEnabledInputs?.forEach((input, index) => {
-    input.checked = isMultiSwitchChannelEnabled(entity.props, index);
-  });
+  populateComponentInspector(entity, elements, { yamlColorToHtml });
   if (fieldActiveBgColor) {
     const color = entity.props.active_bg_color || (entity.type === "light" ? "#ef920c" : "#d7e9dd");
     fieldActiveBgColor.value = yamlColorToHtml(color);
@@ -257,25 +245,7 @@ export function renderInspector(entity, elements) {
       elements.fieldActiveBgColorHex.textContent = fieldActiveBgColor.value.toUpperCase();
     }
   }
-  const showActiveColor = entity.type === "multi_switch" || (entity.type === "switch" && entity.props.style === SWITCH_STYLE_BUTTON);
-  elements.activeBgColorFields?.classList.toggle("hidden", !showActiveColor);
-
-  multiSwitchEntityInputs?.forEach((input, index) => {
-    input.value = entity.entityids[index] || "";
-  });
-  multiSwitchTitleInputs?.forEach((input, index) => {
-    input.value = getMultiSwitchChannelTitle(entity.props, index);
-  });
-  if (entity.type === "light") {
-    elements.fieldLightPreviewCtRow?.classList.toggle("hidden", !entity.props.color_temp);
-    elements.fieldLightPreviewHueRow?.classList.toggle("hidden", !entity.props.hue_360);
-    if (elements.fieldLightPreviewCt) {
-      elements.fieldLightPreviewCt.value = entity.props.preview_color_temp !== undefined ? entity.props.preview_color_temp : 50;
-    }
-    if (elements.fieldLightPreviewHue) {
-      elements.fieldLightPreviewHue.value = entity.props.preview_hue !== undefined ? entity.props.preview_hue : LIGHT_DEFAULT_PREVIEW_HUE;
-    }
-  }
+  elements.activeBgColorFields?.classList.toggle("hidden", !inspectorState.showActiveColor);
   updateThermoIconInspectorPreview(elements);
   updateLightIconInspectorPreview(elements);
 }

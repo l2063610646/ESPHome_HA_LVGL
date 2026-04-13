@@ -19,21 +19,44 @@ Future AI collaborators should read `AGENTS.md` first.
 - `src/app.js`
   Browser entry module for the editor.
 - `src/app/main.js`
-  Main UI wiring, event handling, local cache restore/save, and overall editor coordination.
+  Main UI wiring, event handling, local cache restore/save, drag/resize interactions, and overall editor coordination.
 - `src/app/spec.js`
   State initialization, spec parsing/export, normalization, and shared model helpers.
 - `src/app/preview.js`
-  Canvas preview rendering, entity list rendering, inspector rendering, and preview helpers.
+  Canvas preview rendering, entity list rendering, inspector rendering, and preview orchestration.
 - `src/app/esphome.js`
-  Board templates and final ESPHome YAML generation.
+  Board templates, shared ESPHome helpers, and final ESPHome YAML orchestration.
 - `src/app/constants.js`
-  Board metadata, widget constants, and entity capability definitions.
+  Board metadata, widget constants, and shared layout helpers.
+- `src/app/components/registry.js`
+  Component registry for per-widget metadata and dispatch.
+- `src/app/components/*.js`
+  One module per widget type. These own widget defaults, style normalization, preview rendering, spec-property extension, and Inspector-specific behavior.
+- `src/app/components/esphome/registry.js`
+  Final LVGL/ESPHome renderer registry.
+- `src/app/components/esphome/*.js`
+  One module per widget type for final ESPHome widget rendering.
+- `src/app/components/common.js`
+  Shared component helpers.
+- `src/app/components/preview-helpers.js`
+  Shared preview/icon helper functions used by component modules.
 - `assets/css/styles.css`
   Editor UI and preview styling.
 - `mdi:thermometer`
   Default temperature icon example.
 - `https://l2063610646.github.io/tools/hum.png`
   Default humidity icon example.
+
+Current component modules:
+
+- `switch`
+- `multi_switch`
+- `thermo_hygrometer`
+- `cover`
+- `hmi_screen_brightness`
+- `light`
+
+The project is now component-first. New widget behavior should usually be added in component modules instead of expanding type-switch logic in `spec.js`, `preview.js`, or `esphome.js`.
 
 ## Current Data Model
 
@@ -160,6 +183,29 @@ In the app you can:
 - keep separate local browser cache for each supported HMI board
 
 The board-specific ESPHome base templates are embedded in `src/app/esphome.js`.
+
+## Architecture Notes
+
+The editor now uses a component registry architecture:
+
+- `src/app/components/registry.js`
+  Dispatches type-specific defaults, style normalization, preview rendering, and Inspector behavior.
+- `src/app/components/esphome/registry.js`
+  Dispatches type-specific LVGL/ESPHome widget rendering.
+- `src/app/spec.js`
+  Uses the component registry for normalization and spec export.
+- `src/app/preview.js`
+  Uses the component registry for preview rendering and most Inspector visibility logic.
+- `src/app/esphome.js`
+  Keeps shared helper functions and board templates, then delegates widget rendering to component-specific ESPHome modules.
+
+For a new widget type, the expected implementation path is:
+
+1. Add `src/app/components/<type>.js`
+2. Add `src/app/components/esphome/<type>.js`
+3. Register both in their registries
+4. Add any shared Inspector HTML only if the control is generic enough to belong in the common shell
+5. Keep preview and final YAML in sync for the new widget before considering the work complete
 
 ## Board Templates
 

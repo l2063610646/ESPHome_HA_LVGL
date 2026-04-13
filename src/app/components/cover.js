@@ -49,6 +49,23 @@ export const coverComponent = {
   shouldRenderWidgetTitle() {
     return false;
   },
+  getInspectorState() {
+    return {
+      showEntityId: true,
+      showEntityId2: false,
+      showStyle: true,
+      showMultiSwitch: false,
+      showThermoIcons: false,
+      showHmiBrightness: false,
+      showLightIcon: false,
+      showLightTilePosition: false,
+      showLightSliders: false,
+      showActiveColor: false,
+    };
+  },
+  populateInspector() {},
+  applyInspectorChanges() {},
+  applyInspectorCommit() {},
   appendSpecProps() {},
   renderPreview(entity) {
     const group = document.createElement("div");

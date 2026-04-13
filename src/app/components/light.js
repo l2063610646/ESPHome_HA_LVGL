@@ -85,6 +85,49 @@ export const lightComponent = {
   shouldRenderWidgetTitle() {
     return false;
   },
+  getInspectorState(entity) {
+    return {
+      showEntityId: true,
+      showEntityId2: false,
+      showStyle: true,
+      showMultiSwitch: false,
+      showThermoIcons: false,
+      showHmiBrightness: false,
+      showLightIcon: true,
+      showLightTilePosition: entity.props.style === LIGHT_STYLE_TILE || entity.props.style === LIGHT_STYLE_SLIDER,
+      showLightSliders: entity.props.style === LIGHT_STYLE_SLIDER,
+      showActiveColor: false,
+    };
+  },
+  populateInspector(entity, elements) {
+    elements.fieldLightIcon.value = entity.props.icon ?? "";
+    elements.fieldLightTileIconPosition.value = entity.props.tile_icon_position ?? LIGHT_TILE_ICON_POSITION_DEFAULT;
+    elements.fieldColorTemp.checked = entity.props.color_temp ?? false;
+    elements.fieldHue360.checked = entity.props.hue_360 ?? false;
+    elements.fieldLightPreviewCtRow?.classList.toggle("hidden", !entity.props.color_temp);
+    elements.fieldLightPreviewHueRow?.classList.toggle("hidden", !entity.props.hue_360);
+    if (elements.fieldLightPreviewCt) {
+      elements.fieldLightPreviewCt.value = entity.props.preview_color_temp !== undefined ? entity.props.preview_color_temp : 50;
+    }
+    if (elements.fieldLightPreviewHue) {
+      elements.fieldLightPreviewHue.value = entity.props.preview_hue !== undefined ? entity.props.preview_hue : LIGHT_DEFAULT_PREVIEW_HUE;
+    }
+  },
+  applyInspectorChanges(entity, elements, utils) {
+    entity.props.icon = utils.normalizeIconSource(elements.fieldLightIcon.value);
+    entity.props.tile_icon_position = elements.fieldLightTileIconPosition.value.trim() || entity.props.tile_icon_position;
+    entity.props.color_temp = elements.fieldColorTemp.checked;
+    entity.props.hue_360 = elements.fieldHue360.checked;
+    entity.props.preview_color_temp = parseInt(elements.fieldLightPreviewCt.value, 10);
+    entity.props.preview_hue = parseInt(elements.fieldLightPreviewHue.value, 10);
+    entity.props.height = Math.max(entity.props.height, utils.minHeightForType(entity.type, entity.props.style, entity.props));
+  },
+  applyInspectorCommit(entity, elements) {
+    entity.props.color_temp = elements.fieldColorTemp.checked;
+    entity.props.hue_360 = elements.fieldHue360.checked;
+    entity.props.preview_color_temp = parseInt(elements.fieldLightPreviewCt.value, 10);
+    entity.props.preview_hue = parseInt(elements.fieldLightPreviewHue.value, 10);
+  },
   appendSpecProps(lines, entity, propIndent, { normalizeIconSource, normalizeStyle, quoteYaml }) {
     if (normalizeIconSource(entity.props.icon)) {
       lines.push(`${propIndent}  icon: ${quoteYaml(entity.props.icon)}`);

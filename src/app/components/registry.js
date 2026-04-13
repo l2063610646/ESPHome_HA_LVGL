@@ -71,3 +71,30 @@ export function shouldRenderWidgetTitle(entity) {
 export function renderComponentPreview(entity) {
   return getComponentDefinition(entity.type).renderPreview(entity);
 }
+
+export function getInspectorState(entity) {
+  return getComponentDefinition(entity.type).getInspectorState?.(entity) || {
+    showEntityId: true,
+    showEntityId2: false,
+    showStyle: true,
+    showMultiSwitch: false,
+    showThermoIcons: false,
+    showHmiBrightness: false,
+    showLightIcon: false,
+    showLightTilePosition: false,
+    showLightSliders: false,
+    showActiveColor: false,
+  };
+}
+
+export function populateComponentInspector(entity, elements, utils = {}) {
+  getComponentDefinition(entity.type).populateInspector?.(entity, elements, utils);
+}
+
+export function applyComponentInspectorChanges(entity, elements, utils = {}) {
+  getComponentDefinition(entity.type).applyInspectorChanges?.(entity, elements, utils);
+}
+
+export function applyComponentInspectorCommit(entity, elements, utils = {}) {
+  getComponentDefinition(entity.type).applyInspectorCommit?.(entity, elements, utils);
+}
