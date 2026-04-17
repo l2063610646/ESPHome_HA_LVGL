@@ -40,30 +40,38 @@ import {
   THERMO_ICON_PATHS,
 } from "./constants.js";
 import {
+  applyComponentInspectorChanges,
+  applyComponentInspectorCommit,
   createEntityDraft,
   defaultHeightForType,
   defaultTitleForType,
   defaultWidthForType,
   getComponentDefinition,
   getEntityCapability,
+  getInspectorState,
   minHeightForType,
   minWidthForType,
   normalizeStyle,
   normalizeType,
+  populateComponentInspector,
   shouldRenderWidgetTitle,
   usesTopAlignedTitle,
 } from "./components/registry.js";
 
 export {
+  applyComponentInspectorChanges,
+  applyComponentInspectorCommit,
   createEntityDraft,
   defaultHeightForType,
   defaultTitleForType,
   defaultWidthForType,
   getEntityCapability,
+  getInspectorState,
   minHeightForType,
   minWidthForType,
   normalizeStyle,
   normalizeType,
+  populateComponentInspector,
   shouldRenderWidgetTitle,
   usesTopAlignedTitle,
 } from "./components/registry.js";

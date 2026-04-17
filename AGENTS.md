@@ -25,7 +25,11 @@ The old Python build pipeline is not part of the normal workflow anymore.
 - `src/app.js`
   Browser entry module. It loads the editor app.
 - `src/app/main.js`
-  Main UI wiring, event handling, local cache restore/save, drag/resize interactions, and overall editor coordination.
+  Main UI wiring, event handling, drag/resize interactions, and overall editor coordination.
+- `src/app/persistence.js`
+  Browser-local cache snapshot/save/restore helpers and timestamp helpers for downloads.
+- `src/app/screens.js`
+  Current-screen lookup, screen/entity synchronization, and screen control UI helpers.
 - `src/app/spec.js`
   State initialization, spec parsing/export, normalization, and shared data-model helpers.
 - `src/app/preview.js`
@@ -108,6 +112,8 @@ The project has been refactored to be component-first.
   - preview renderer dispatch
 - Use `src/app/components/esphome/registry.js` for final LVGL/ESPHome widget renderer dispatch.
 - `spec.js`, `preview.js`, and `esphome.js` should act as orchestration layers and shared-helper homes, not as the primary place for per-widget behavior.
+- `main.js` should also stay focused on editor orchestration. Browser cache persistence belongs in `src/app/persistence.js`.
+- Current-screen selection and screen-control syncing belong in `src/app/screens.js`, not as another large inline state section inside `main.js`.
 
 Current component split:
 

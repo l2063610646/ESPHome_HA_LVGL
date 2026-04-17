@@ -19,7 +19,11 @@ Future AI collaborators should read `AGENTS.md` first.
 - `src/app.js`
   Browser entry module for the editor.
 - `src/app/main.js`
-  Main UI wiring, event handling, local cache restore/save, drag/resize interactions, and overall editor coordination.
+  Main UI wiring, event handling, drag/resize interactions, and overall editor coordination.
+- `src/app/persistence.js`
+  Local cache snapshot/save/restore helpers and filename timestamp helpers.
+- `src/app/screens.js`
+  Screen selection, current-screen entity syncing, and screen control UI helpers.
 - `src/app/spec.js`
   State initialization, spec parsing/export, normalization, and shared model helpers.
 - `src/app/preview.js`
@@ -198,6 +202,10 @@ The editor now uses a component registry architecture:
   Uses the component registry for preview rendering and most Inspector visibility logic.
 - `src/app/esphome.js`
   Keeps shared helper functions and board templates, then delegates widget rendering to component-specific ESPHome modules.
+- `src/app/persistence.js`
+  Owns browser-local state cache persistence so `main.js` does not carry snapshot/restore details.
+- `src/app/screens.js`
+  Owns current-screen lookup/sync logic so `main.js` does not carry all screen-selection state flow inline.
 
 For a new widget type, the expected implementation path is:
 
