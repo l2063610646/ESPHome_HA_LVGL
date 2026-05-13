@@ -1,9 +1,9 @@
-import { SWITCH_STYLE_BUTTON } from "../../constants.js";
+import { SWITCH_STYLE_SWITCH } from "../../constants.js";
 
 export function renderSwitchEsphomeWidget(entity, renderers) {
-  return entity.props.style === SWITCH_STYLE_BUTTON
-    ? renderSingleSwitchButtonWidget(entity, renderers)
-    : renderSingleSwitchToggleWidget(entity, renderers);
+  return entity.props.style === SWITCH_STYLE_SWITCH
+    ? renderSingleSwitchToggleWidget(entity, renderers)
+    : renderSingleSwitchButtonWidget(entity, renderers);
 }
 
 function renderSingleSwitchToggleWidget(entity, ctx) {

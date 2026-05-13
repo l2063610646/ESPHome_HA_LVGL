@@ -5,7 +5,7 @@ import {
   DEFAULT_SWITCH_PAD_RIGHT,
   DEFAULT_BUTTON_BG_COLOR,
   SWITCH_STYLE_TOGGLE,
-  SWITCH_STYLE_BUTTON,
+  SWITCH_STYLE_SWITCH,
   SWITCH_BUTTON_HEIGHT,
   SWITCH_BUTTON_STYLE_HEIGHT,
   SWITCH_WIDTH,
@@ -47,8 +47,8 @@ export const switchComponent = {
   label: "switch",
   entityFields: [{ label: "Entity ID", defaultValue: (index) => `switch.new_switch_${index}` }],
   styleOptions: [
+    { value: SWITCH_STYLE_SWITCH, label: "switch" },
     { value: SWITCH_STYLE_TOGGLE, label: "toggle" },
-    { value: SWITCH_STYLE_BUTTON, label: "button" },
   ],
   createEntity(index) {
     return {
@@ -64,7 +64,7 @@ export const switchComponent = {
     };
   },
   normalizeStyle(value) {
-    return value === SWITCH_STYLE_BUTTON ? SWITCH_STYLE_BUTTON : SWITCH_STYLE_TOGGLE;
+    return value === SWITCH_STYLE_SWITCH ? SWITCH_STYLE_SWITCH : SWITCH_STYLE_TOGGLE;
   },
   defaultTitle(entityids) {
     return deriveTitle(entityids[0]);
@@ -73,16 +73,16 @@ export const switchComponent = {
     return DEFAULT_WIDTH;
   },
   defaultHeight(style) {
-    return style === SWITCH_STYLE_BUTTON ? SWITCH_BUTTON_STYLE_HEIGHT : DEFAULT_HEIGHT;
+    return style === SWITCH_STYLE_TOGGLE ? SWITCH_BUTTON_STYLE_HEIGHT : DEFAULT_HEIGHT;
   },
   minWidth() {
     return 150;
   },
   minHeight(style) {
-    return style === SWITCH_STYLE_BUTTON ? SWITCH_BUTTON_STYLE_HEIGHT : 56;
+    return style === SWITCH_STYLE_TOGGLE ? SWITCH_BUTTON_STYLE_HEIGHT : 56;
   },
   usesTopAlignedTitle(entity) {
-    return entity.props.style === SWITCH_STYLE_BUTTON;
+    return entity.props.style === SWITCH_STYLE_TOGGLE;
   },
   shouldRenderWidgetTitle(entity) {
     return entity.props.style !== undefined;
@@ -98,7 +98,7 @@ export const switchComponent = {
       showLightIcon: false,
       showLightTilePosition: false,
       showLightSliders: false,
-      showActiveColor: entity.props.style === SWITCH_STYLE_BUTTON,
+      showActiveColor: entity.props.style === SWITCH_STYLE_TOGGLE,
     };
   },
   populateInspector() {},
@@ -106,6 +106,6 @@ export const switchComponent = {
   applyInspectorCommit() {},
   appendSpecProps() {},
   renderPreview(entity) {
-    return entity.props.style === SWITCH_STYLE_BUTTON ? renderButtonPreview(entity) : renderTogglePreview();
+    return entity.props.style === SWITCH_STYLE_TOGGLE ? renderButtonPreview(entity) : renderTogglePreview();
   },
 };

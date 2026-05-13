@@ -33,9 +33,6 @@ import {
   getEnabledSwitchIndices,
   normalizeLightTileIconPosition,
   isMultiSwitchChannelEnabled,
-  SWITCH_BUTTON_STYLE_HEIGHT,
-  SWITCH_STYLE_BUTTON,
-  SWITCH_STYLE_TOGGLE,
   THERMO_HYGROMETER_STYLE_COMPACT,
   THERMO_ICON_PATHS,
 } from "./constants.js";

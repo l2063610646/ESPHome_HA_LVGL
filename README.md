@@ -88,7 +88,7 @@ Internally, the editor stores page state in a compact YAML-friendly shape:
 Supported styles:
 
 - `switch.props.style: toggle`
-- `switch.props.style: button`
+- `switch.props.style: switch`
 - `multi_switch.props.style: tile`
 - `light.props.style: icon`
 - `light.props.style: tile`
@@ -127,7 +127,7 @@ screens:
       - entityid: "switch.living_room"
         type: switch
         props:
-          style: "button"
+          style: "switch"
           x: 24
           y: 24
           width: 220

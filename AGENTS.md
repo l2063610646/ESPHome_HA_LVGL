@@ -245,3 +245,5 @@ If the request is "add UI", "bind HA entity", "move widgets", "add page logic", 
 - work in the editor files first
 - keep the compact spec contract coherent
 - keep preview behavior and final YAML generation in sync
+
+@RTK.md

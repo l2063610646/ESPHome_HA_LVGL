@@ -19,7 +19,8 @@ import {
   MULTI_SWITCH_STYLE_TILE,
   MULTI_SWITCH_STYLE_LIST,
   SWITCH_BUTTON_HEIGHT,
-  SWITCH_STYLE_BUTTON,
+  SWITCH_STYLE_TOGGLE,
+  SWITCH_STYLE_SWITCH,
   SWITCH_HEIGHT,
   SWITCH_WIDTH,
   THERMO_ICON_PATHS,
@@ -293,7 +294,7 @@ export function calculateHueSliderColor(hue) {
 }
 
 function renderSingleSwitchPreview(entity) {
-  if (entity.props.style === SWITCH_STYLE_BUTTON) {
+  if (entity.props.style === SWITCH_STYLE_TOGGLE) {
     return renderSingleButtonSwitchPreview(entity);
   }
   const switchShell = document.createElement("div");
