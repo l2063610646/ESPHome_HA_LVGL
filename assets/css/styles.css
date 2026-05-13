@@ -1105,7 +1105,7 @@ textarea {
 .light-widget-group.tile {
   display: block;
   padding: 0;
-  border: 1px solid #d7ddd9;
+  border: 0px solid #d7ddd9;
   border-radius: 12px;
   background: #eef3f0;
   overflow: hidden;

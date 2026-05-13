@@ -246,10 +246,7 @@ export const lightComponent = {
     const icon = document.createElement("img");
     icon.className = "light-widget-icon";
     appendIconWithFallback(icon, entity.props.icon, LIGHT_ICON_PATHS.on, "Light");
-    const actionLabel = document.createElement("span");
-    actionLabel.className = "light-action-label";
-    actionLabel.textContent = "OFF";
-    group.append(icon, actionLabel);
+    group.append(icon);
     return group;
   },
 };

@@ -32,7 +32,14 @@ const UI_FONT_VALUE = "montserrat_16";
 
 export function renderCombinedYaml(state) {
   const screens = normalizeScreens(state.screens, state.canvasWidth, state.canvasHeight);
-  const entities = screens.flatMap((screen) => normalizeEntities(screen.entities, state.canvasWidth, state.canvasHeight));
+  const scopedScreens = screens.map((screen) => ({
+    ...screen,
+    entities: normalizeEntities(screen.entities, state.canvasWidth, state.canvasHeight).map((entity) => ({
+      ...entity,
+      __screenKey: screen.id,
+    })),
+  }));
+  const entities = scopedScreens.flatMap((screen) => screen.entities);
   const header = [
     "# This file is auto-generated.",
     `# Base config: ${state.board}.yaml`,
@@ -44,7 +51,7 @@ export function renderCombinedYaml(state) {
     renderBaseConfigYaml(state, entities).trimEnd(),
     `  bg_color: ${state.screenBgColor}`,
     "  widgets:",
-    indentLines(renderScreenWidgetBlock(screens, normalizeSwipeDirection(state.swipeDirection)) || "[]", 4),
+    indentLines(renderScreenWidgetBlock(scopedScreens, normalizeSwipeDirection(state.swipeDirection)) || "[]", 4),
     "",
     "switch:",
     indentLines(renderSwitchBlock(entities) || "[]", 2),
@@ -87,7 +94,7 @@ function sanitizeId(value) {
 }
 
 function getEntitySlug(entity) {
-  const parts = [entity.type, ...(entity.entityids || [])];
+  const parts = [entity.__screenKey || "", entity.type, ...(entity.entityids || [])];
   if (!(entity.entityids || []).length && entity.props?.title) {
     parts.push(entity.props.title);
   }
@@ -1090,12 +1097,7 @@ ${onStateYaml}`;
         id: ${getWidgetId(entity, 0)}
         state:
           checked: !lambda return x == "on";
-    - lvgl.label.update:
-        id: ${getLightStateLabelId(entity)}
-        text: !lambda |-
-          static std::string value;
-          value = x == "on" ? "ON" : "OFF";
-          return value.c_str();`;
+`;
 }
 
 function renderWidget(entity) {

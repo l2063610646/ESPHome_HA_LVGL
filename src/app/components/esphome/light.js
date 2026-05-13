@@ -9,7 +9,7 @@ export function renderLightEsphomeWidget(entity, renderers) {
 }
 
 function renderLightIconWidget(entity, ctx) {
-  const { getHaTextSensorId, getLightImageId, getLightStateLabelId, getWidgetId, quoteYaml, UI_FONT_BODY } = ctx;
+  const { getHaTextSensorId, getLightImageId, getWidgetId, quoteYaml, UI_FONT_BODY } = ctx;
   return `- button:
     id: ${getWidgetId(entity, 0)}
     x: ${entity.props.x}
@@ -42,12 +42,6 @@ function renderLightIconWidget(entity, ctx) {
       checked: !lambda return id(${getHaTextSensorId(entity, 0)}).state == "on";
     on_change:
       then:
-        - lvgl.label.update:
-            id: ${getLightStateLabelId(entity)}
-            text: !lambda |-
-              static std::string value;
-              value = x ? "ON" : "OFF";
-              return value.c_str();
         - if:
             condition:
               lambda: return x;
@@ -64,15 +58,7 @@ function renderLightIconWidget(entity, ctx) {
     widgets:
       - image:
           src: ${getLightImageId(entity)}
-          bg_opa: TRANSP
-      - label:
-          id: ${getLightStateLabelId(entity)}
-          text_font: ${UI_FONT_BODY}
-          text: !lambda |-
-            static std::string value;
-            value = id(${getHaTextSensorId(entity, 0)}).state == "on" ? "ON" : "OFF";
-            return value.c_str();
-          text_color: 0xFFFFFF`;
+          bg_opa: TRANSP`;
 }
 
 function renderLightTileWidget(entity, ctx) {
@@ -88,8 +74,7 @@ function renderLightTileWidget(entity, ctx) {
     width: ${entity.props.width}
     height: ${entity.props.height}
     radius: 12
-    border_width: 1
-    border_color: 0xD7DDD9
+    border_width: 0
     checkable: true
     pad_all: 0
     bg_opa: COVER
