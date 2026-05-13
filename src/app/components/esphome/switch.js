@@ -60,7 +60,6 @@ function renderSingleSwitchButtonWidget(entity, ctx) {
     quoteYaml,
     UI_FONT_BODY,
   } = ctx;
-  const buttonWidth = Math.max(entity.props.width - 32, 96);
   return `- obj:
     id: ${getContainerId(entity)}
     x: ${entity.props.x}
@@ -79,18 +78,12 @@ function renderSingleSwitchButtonWidget(entity, ctx) {
     scrollable: false
     scrollbar_mode: "OFF"
     widgets:
-      - label:
-          align: TOP_LEFT
-          x: 16
-          y: 12
-          text_font: ${UI_FONT_BODY}
-          text: ${quoteYaml(entity.props.title)}
       - button:
           id: ${getWidgetId(entity, 0)}
-          align: BOTTOM_MID
-          y: -12
-          width: ${buttonWidth}
-          height: 40
+          x: 0
+          y: 0
+          width: ${entity.props.width}
+          height: ${entity.props.height}
           checkable: true
           radius: 12
           pad_all: 0
@@ -108,7 +101,7 @@ function renderSingleSwitchButtonWidget(entity, ctx) {
             - label:
                 align: CENTER
                 text_font: ${UI_FONT_BODY}
-                text: "Toggle"
+                text: ${quoteYaml(entity.props.title)}
                 text_color: 0x24323A
           on_change:
             then:

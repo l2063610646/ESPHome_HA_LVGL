@@ -1,12 +1,10 @@
 import {
   DEFAULT_WIDTH,
   DEFAULT_HEIGHT,
-  DEFAULT_LABEL_PAD_LEFT,
   DEFAULT_SWITCH_PAD_RIGHT,
   DEFAULT_BUTTON_BG_COLOR,
   SWITCH_STYLE_TOGGLE,
   SWITCH_STYLE_SWITCH,
-  SWITCH_BUTTON_HEIGHT,
   SWITCH_BUTTON_STYLE_HEIGHT,
   SWITCH_WIDTH,
   SWITCH_HEIGHT,
@@ -29,15 +27,12 @@ function renderTogglePreview() {
 function renderButtonPreview(entity) {
   const button = document.createElement("div");
   button.className = "single-switch-button";
-  button.style.left = `${DEFAULT_LABEL_PAD_LEFT}px`;
-  button.style.bottom = "12px";
-  button.style.width = `${Math.max(entity.props.width - 32, 96)}px`;
-  button.style.height = `${SWITCH_BUTTON_HEIGHT}px`;
+  button.style.inset = "0";
   button.style.background = DEFAULT_BUTTON_BG_COLOR;
 
   const label = document.createElement("span");
   label.className = "single-switch-button-label";
-  label.textContent = "Toggle";
+  label.textContent = entity.props.title;
   button.append(label);
   return button;
 }
@@ -76,16 +71,16 @@ export const switchComponent = {
     return style === SWITCH_STYLE_TOGGLE ? SWITCH_BUTTON_STYLE_HEIGHT : DEFAULT_HEIGHT;
   },
   minWidth() {
-    return 150;
+    return 20;
   },
   minHeight(style) {
     return style === SWITCH_STYLE_TOGGLE ? SWITCH_BUTTON_STYLE_HEIGHT : 56;
   },
   usesTopAlignedTitle(entity) {
-    return entity.props.style === SWITCH_STYLE_TOGGLE;
+    return false;
   },
   shouldRenderWidgetTitle(entity) {
-    return entity.props.style !== undefined;
+    return entity.props.style !== SWITCH_STYLE_TOGGLE;
   },
   getInspectorState(entity) {
     return {

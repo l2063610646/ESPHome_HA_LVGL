@@ -18,7 +18,6 @@ import {
   LIGHT_DEFAULT_PREVIEW_HUE,
   MULTI_SWITCH_STYLE_TILE,
   MULTI_SWITCH_STYLE_LIST,
-  SWITCH_BUTTON_HEIGHT,
   SWITCH_STYLE_TOGGLE,
   SWITCH_STYLE_SWITCH,
   SWITCH_HEIGHT,
@@ -312,15 +311,12 @@ function renderSingleSwitchPreview(entity) {
 function renderSingleButtonSwitchPreview(entity) {
   const button = document.createElement("div");
   button.className = "single-switch-button";
-  button.style.left = `${DEFAULT_LABEL_PAD_LEFT}px`;
-  button.style.bottom = "12px";
-  button.style.width = `${Math.max(entity.props.width - 32, 96)}px`;
-  button.style.height = `${SWITCH_BUTTON_HEIGHT}px`;
+  button.style.inset = "0";
   button.style.background = DEFAULT_BUTTON_BG_COLOR;
 
   const label = document.createElement("span");
   label.className = "single-switch-button-label";
-  label.textContent = "Toggle";
+  label.textContent = entity.props.title;
   button.append(label);
   return button;
 }
