@@ -28,7 +28,7 @@ function renderLightIconWidget(entity, ctx) {
     pad_all: 5
     border_width: 0
     bg_opa: COVER
-    bg_color: 0x989898
+    bg_color: 0xF8FBF9
     transform_pivot_x: ${Math.floor(entity.props.width / 2)}
     transform_pivot_y: ${Math.floor(entity.props.height / 2)}
     checked:

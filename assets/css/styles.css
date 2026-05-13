@@ -1072,13 +1072,13 @@ textarea {
   gap: 2px;
   padding: 5px;
   border-radius: 14px;
-  background: #989898;
+  background: #f8fbf9;
   transform-origin: center;
   transition: transform 120ms ease;
 }
 
 .light-widget-group.off {
-  background: #989898;
+  background: #f8fbf9;
 }
 
 .light-widget-group.on {

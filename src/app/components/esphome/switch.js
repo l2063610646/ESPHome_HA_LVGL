@@ -82,6 +82,7 @@ function renderSingleSwitchButtonWidget(entity, ctx) {
           y: 0
           width: ${entity.props.width}
           height: ${entity.props.height}
+          checkable: true
           radius: 12
           pad_all: 0
           border_width: 0
