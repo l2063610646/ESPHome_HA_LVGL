@@ -83,6 +83,9 @@ export function renderCanvas(state, elements, callbacks) {
     const widget = document.createElement("button");
     widget.type = "button";
     widget.className = `canvas-widget${entity.id === state.selectedId ? " active" : ""}`;
+    if (entity.type === "switch" && entity.props.style === SWITCH_STYLE_TOGGLE) {
+      widget.classList.add("switch-toggle-frame");
+    }
     widget.style.left = `${entity.props.x}px`;
     widget.style.top = `${entity.props.y}px`;
     widget.style.width = `${entity.props.width}px`;

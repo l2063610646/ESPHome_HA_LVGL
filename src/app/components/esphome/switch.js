@@ -15,8 +15,7 @@ function renderSingleSwitchToggleWidget(entity, ctx) {
     width: ${entity.props.width}
     height: ${entity.props.height}
     radius: 14
-    border_width: 1
-    border_color: 0xD7DDD9
+    border_width: 0
     pad_all: 0
     bg_opa: COVER
     bg_color: 0xF8FBF9
@@ -67,8 +66,7 @@ function renderSingleSwitchButtonWidget(entity, ctx) {
     width: ${entity.props.width}
     height: ${entity.props.height}
     radius: 14
-    border_width: 1
-    border_color: 0xD7DDD9
+    border_width: 0
     pad_all: 0
     bg_opa: COVER
     bg_color: 0xF8FBF9
@@ -84,11 +82,9 @@ function renderSingleSwitchButtonWidget(entity, ctx) {
           y: 0
           width: ${entity.props.width}
           height: ${entity.props.height}
-          checkable: true
           radius: 12
           pad_all: 0
-          border_width: 1
-          border_color: 0xB9C9C2
+          border_width: 0
           bg_opa: COVER
           bg_color: ${buttonInactiveBgColor(entity)}
           checked:
@@ -104,12 +100,12 @@ function renderSingleSwitchButtonWidget(entity, ctx) {
                 text: ${quoteYaml(entity.props.title)}
                 text_color: 0x24323A
           on_change:
-            then:
-              - if:
-                  condition:
-                    lambda: return x;
-                  then:
-                    - switch.turn_on: ${getHaSwitchId(entity, 0)}
-                  else:
-                    - switch.turn_off: ${getHaSwitchId(entity, 0)}`;
+                then:
+                  - if:
+                      condition:
+                        lambda: return x;
+                      then:
+                        - switch.turn_on: ${getHaSwitchId(entity, 0)}
+                      else:
+                        - switch.turn_off: ${getHaSwitchId(entity, 0)}`;
 }
