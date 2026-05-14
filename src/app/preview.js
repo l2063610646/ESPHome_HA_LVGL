@@ -561,7 +561,7 @@ function renderLightPreview(entity) {
 
     const icon = document.createElement("img");
     icon.className = "light-tile-icon";
-    icon.src = resolvePreviewImageSource(entity.props.icon);
+    icon.src = resolvePreviewImageSource(LIGHT_ICON_PATHS.on);
     icon.alt = "Light";
     icon.addEventListener("error", () => {
       if (icon.dataset.fallbackApplied === "true") return;
@@ -594,7 +594,7 @@ function renderLightPreview(entity) {
     
     const icon = document.createElement("img");
     icon.className = "light-tile-icon";
-    icon.src = resolvePreviewImageSource(entity.props.icon);
+    icon.src = resolvePreviewImageSource("mdi:lightbulb");
     icon.alt = "Light";
     icon.addEventListener("error", () => {
       if (icon.dataset.fallbackApplied === "true") return;

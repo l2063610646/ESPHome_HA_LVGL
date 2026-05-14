@@ -187,7 +187,7 @@ export const lightComponent = {
       iconBubble.style.position = "static";
       const icon = document.createElement("img");
       icon.className = "light-tile-icon";
-      appendIconWithFallback(icon, entity.props.icon, LIGHT_ICON_PATHS.on, "Light");
+      appendIconWithFallback(icon, "mdi:lightbulb", "mdi:lightbulb", "Light");
       iconBubble.append(icon);
       const infoBlock = document.createElement("div");
       infoBlock.className = "light-slider-info";

@@ -94,7 +94,7 @@ function sanitizeId(value) {
 }
 
 function getEntitySlug(entity) {
-  const parts = [entity.__screenKey || "", entity.type, ...(entity.entityids || [])];
+  const parts = [entity.__screenKey || "", entity.type, entity.id || "", ...(entity.entityids || [])];
   if (!(entity.entityids || []).length && entity.props?.title) {
     parts.push(entity.props.title);
   }
@@ -864,13 +864,19 @@ function renderImageBlock(entities) {
         if (entity.type === "light" && entity.props.style === LIGHT_STYLE_SLIDER) {
           return [
             `- file: "mdi:lightbulb"
-  id: ${getLightImageId(entity)}_on
+  id: ${getLightImageId(entity)}
   type: BINARY
-  transparency: chroma_key`,
-            `- file: "mdi:lightbulb-off"
-  id: ${getLightImageId(entity)}_off
-  type: BINARY
-  transparency: chroma_key`
+  transparency: chroma_key
+  resize: 32x32`,
+          ];
+        }
+
+        if (entity.type === "light" && entity.props.style === LIGHT_STYLE_TILE) {
+          return [
+            `- file: ${quoteYaml(entity.props.icon || LIGHT_ICON_PATHS.on)}
+  id: ${getLightImageId(entity)}
+  type: rgb565
+  transparency: alpha_channel`
           ];
         }
 
@@ -1052,9 +1058,6 @@ ${indentCodeBlock(renderLightAccentColorLambda(entity), 16)}`;
           - lvgl.label.update:
               id: ${getLightStateLabelId(entity)}
               text: "OFF"
-          - lvgl.image.update:
-              id: ${getWidgetId(entity, 0)}_icon
-              src: ${getLightImageId(entity)}_off
           - lvgl.obj.update:
               id: ${getWidgetId(entity, 0)}_icon
               image_recolor: 0x9E9E9E
@@ -1073,9 +1076,6 @@ ${offStateYaml}
                 if (slider_val == 0) return "OFF";
                 sprintf(buf, "%.0f%%", (float)slider_val);
                 return buf;
-          - lvgl.image.update:
-              id: ${getWidgetId(entity, 0)}_icon
-              src: ${getLightImageId(entity)}_on
           - lvgl.obj.update:
               id: ${getWidgetId(entity, 0)}_icon
               image_recolor: !lambda |-

@@ -207,7 +207,7 @@ function renderLightSliderWidget(entity, ctx) {
                 widgets:
                   - image:
                       id: ${getWidgetId(entity, 0)}_icon
-                      src: ${iconId}_on
+                      src: ${iconId}
                       image_recolor: 0xFDBB13
                       image_recolor_opa: COVER
             - obj:

@@ -1277,6 +1277,8 @@ code {
 }
 
 .light-widget-group.slider .light-tile-icon-bubble img {
+  width: 32px;
+  height: 32px;
   filter: invert(79%) sepia(48%) saturate(3478%) hue-rotate(344deg) brightness(104%) contrast(98%) !important;
 }
 
